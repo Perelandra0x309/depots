@@ -7,6 +7,7 @@
 
 #include <Window.h>
 
+#include "DepotsSettings.h"
 #include "DepotsView.h"
 
 
@@ -16,6 +17,7 @@ public:
 	virtual	bool			QuitRequested();
 	
 private:
+	DepotsSettings			fSettings;
 	DepotsView				*fView;
 };
 

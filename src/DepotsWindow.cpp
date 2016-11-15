@@ -5,6 +5,7 @@
 #include <Application.h>
 #include <Catalog.h>
 #include <LayoutBuilder.h>
+#include <Screen.h>
 
 #include "DepotsWindow.h"
 
@@ -21,12 +22,24 @@ DepotsWindow::DepotsWindow(BRect size)
 	BLayoutBuilder::Group<>(this, B_VERTICAL)
 		.Add(fView)
 	.End();
+	
+	// Location on screen
+	MoveTo(fSettings.GetLocation());
+	BScreen screen;
+	BRect screenFrame = screen.Frame();
+	BRect frame = Frame();
+	if(screenFrame.right < frame.right || screenFrame.left > frame.left
+		|| screenFrame.top > frame.top || screenFrame.bottom < frame.bottom)
+		CenterOnScreen();
+	
+	Show();
 }
 
 
 bool
 DepotsWindow::QuitRequested()
 {
+	fSettings.SetLocation(Frame().LeftTop());
 	be_app->PostMessage(B_QUIT_REQUESTED);
 	return BWindow::QuitRequested();
 }

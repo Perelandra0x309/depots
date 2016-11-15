@@ -3,6 +3,7 @@ APP_MIME_SIG = application/x-vnd.BH-Depots
 TYPE = APP
 SRCS = DepotsView.cpp \
 	DepotsWindow.cpp \
+	DepotsSettings.cpp \
 	Depots.cpp
 LIBS := be localestub $(STDCPPLIBS)
 OPTIMIZE := FULL
