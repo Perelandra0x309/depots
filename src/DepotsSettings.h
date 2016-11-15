@@ -5,20 +5,30 @@
 #ifndef DEPOTS_SETTINGS_H
 #define DEPOTS_SETTINGS_H
 
+#include <ObjectList.h>
 #include <Path.h>
 #include <Point.h>
+#include <String.h>
+
+
+struct Repository{
+	BString name, url;
+};
+
 
 class DepotsSettings {
 public:
-						DepotsSettings();
-	BPoint				GetLocation(){ return fLocation; }
-	void				SetLocation(BPoint location);
+							DepotsSettings();
+							~DepotsSettings();
+	BPoint					GetLocation(){ return fLocation; }
+	void					SetLocation(BPoint location);
 						
 private:
-	BPoint				fLocation;
-	BPath				fFilePath;
-	status_t			_ReadFromFile();
-	status_t			_SaveToFile();
+	BPoint					fLocation;
+	BPath					fFilePath;
+	BObjectList<Repository>		fReposList;
+	status_t				_ReadFromFile();
+	status_t				_SaveToFile();
 };
 
 #endif

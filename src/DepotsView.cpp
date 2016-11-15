@@ -5,7 +5,6 @@
 #include <Button.h>
 #include <Catalog.h>
 #include <CheckBox.h>
-#include <GroupView.h>
 #include <LayoutBuilder.h>
 #include <SeparatorView.h>
 
@@ -19,14 +18,16 @@ DepotsView::DepotsView()
 	:
 	BView("depotsview", B_WILL_DRAW)
 {
-	BGroupView *reposView = new BGroupView();
-	BCheckBox *testCB = new BCheckBox("reponame", "Repo", NULL);
-	BLayoutBuilder::Group<>(reposView, B_VERTICAL, B_USE_DEFAULT_SPACING)
+	fReposView = new BGroupView();
+	
+	BCheckBox *testCB = new BCheckBox("reponame", "Repo", NULL);//dummy test
+	
+	BLayoutBuilder::Group<>(fReposView, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.Add(testCB)
 	.End();
 	
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
-		.Add(reposView)
+		.Add(fReposView)
 		.AddStrut(B_USE_DEFAULT_SPACING)
 		.Add(new BSeparatorView(B_HORIZONTAL))
 		.AddGroup(B_HORIZONTAL, B_USE_DEFAULT_SPACING)

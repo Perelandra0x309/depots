@@ -19,7 +19,6 @@ DepotsApplication::DepotsApplication()
 {
 	BRect mainWindowRect(50,50,80,80);
 	fWindow = new DepotsWindow(mainWindowRect);
-//	fWindow->Show();
 }
 
 /*
@@ -34,8 +33,8 @@ void
 DepotsApplication::AboutRequested()
 {
 	BAlert *aboutAlert = new BAlert(B_TRANSLATE("About"),
-				B_TRANSLATE("Depots preferences by Brian Hill"),
-				B_TRANSLATE("OK"));
+				B_TRANSLATE_COMMENT("Depots preferences by Brian Hill", "About box text"),
+				B_TRANSLATE_COMMENT("OK", "About box button label"));
 	aboutAlert->SetFlags(aboutAlert->Flags() | B_CLOSE_ON_ESCAPE);
 	aboutAlert->Go();
 }

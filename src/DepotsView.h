@@ -5,6 +5,7 @@
 #ifndef DEPOTS_VIEW_H
 #define DEPOTS_VIEW_H
 
+#include <GroupView.h>
 #include <View.h>
 
 
@@ -15,7 +16,7 @@ public:
 //	virtual void	AllAttached();
 //	virtual void	MessageReceived(BMessage*);
 private:
-
+	BGroupView		*fReposView;
 };
 
 #endif
