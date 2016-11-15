@@ -12,7 +12,7 @@
 class DepotsApplication : public BApplication {
 public:
 						DepotsApplication();
-	virtual bool		QuitRequested();
+//	virtual bool		QuitRequested();
 			void		AboutRequested();
 private:
 	DepotsWindow		*fWindow;

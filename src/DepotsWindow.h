@@ -5,6 +5,8 @@
 #ifndef DEPOTS_WINDOW_H
 #define DEPOTS_WINDOW_H
 
+#include <Window.h>
+
 #include "DepotsView.h"
 
 

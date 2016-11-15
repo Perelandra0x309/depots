@@ -5,6 +5,7 @@
 #include "Depots.h"
 
 #include <Alert.h>
+#include <Catalog.h>
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "DepotsApplication"
@@ -16,10 +17,17 @@ DepotsApplication::DepotsApplication()
 	:
 	BApplication(kAppSignature)
 {
-	BRect mainWindowRect(0,0,200,400);
+	BRect mainWindowRect(50,50,400,400);
 	fWindow = new DepotsWindow(mainWindowRect);
 	fWindow->Show();
 }
+
+/*
+void
+DepotsApplication::QuitRequested()
+{
+	return true;
+}*/
 
 
 void
