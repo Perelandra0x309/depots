@@ -5,20 +5,29 @@
 #ifndef DEPOTS_WINDOW_H
 #define DEPOTS_WINDOW_H
 
+#include <ObjectList.h>
+#include <String.h>
+#include <StringList.h>
 #include <Window.h>
 
 #include "DepotsSettings.h"
 #include "DepotsView.h"
+#include "Repository.h"
 
 
 class DepotsWindow : public BWindow {
 public:
 							DepotsWindow(BRect size);
+							~DepotsWindow();
 	virtual	bool			QuitRequested();
 	
 private:
 	DepotsSettings			fSettings;
+	BObjectList<Repository>	fReposList;
 	DepotsView				*fView;
+	void					_CreateRepoList();
+	void					_AddRepo(BString name, BString url, bool enabled);
+	void					_PopulateDepotsView();
 };
 
 #endif

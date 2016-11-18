@@ -8,6 +8,8 @@
 #include <GroupView.h>
 #include <View.h>
 
+#include "Repository.h"
+
 
 class DepotsView : public BView {
 public:
@@ -15,6 +17,8 @@ public:
 //					~DepotsView();
 //	virtual void	AllAttached();
 //	virtual void	MessageReceived(BMessage*);
+	status_t		Clean();
+	void			AddRepository(Repository *repo);
 private:
 	BGroupView		*fReposView;
 };

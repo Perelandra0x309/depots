@@ -18,8 +18,6 @@ const char* key_url = "repo_url";
 
 DepotsSettings::DepotsSettings()
 {
-	fLocation.Set(-10,-10);
-	
 	status_t status = find_directory(B_USER_SETTINGS_DIRECTORY, &fFilePath);
 	if (status == B_OK) {
 		status = fFilePath.Append(settingsFilename);
@@ -29,25 +27,65 @@ DepotsSettings::DepotsSettings()
 }
 
 
-DepotsSettings::~DepotsSettings()
+BPoint
+DepotsSettings::GetLocation()
 {
-	// Empty repositories list
-	int32 index, count;
-	count = fReposList.CountItems();
-	for(index=0; index < count; index++)
-	{
-		Repository *item = fReposList.ItemAt(0);
-		fReposList.RemoveItem(0);
-		delete item;
-	}
+	BPoint location;
+	fSettings.FindPoint(key_location, &location);
+	return location;
 }
 
 
 void
 DepotsSettings::SetLocation(BPoint location)
 {
-	fLocation = location;
+	fSettings.RemoveData(key_location);
+	fSettings.AddPoint(key_location, location);
 	_SaveToFile();
+}
+
+
+int32
+DepotsSettings::CountRepositories()
+{
+	type_code type;
+	int32 count;
+	fSettings.GetInfo(key_name, &type, &count);
+	return count;
+}
+
+
+status_t
+DepotsSettings::GetRepository(int32 index, BString *name, BString *url)
+{
+	status_t result1 = fSettings.FindString(key_name, index, name);
+	status_t result2 = fSettings.FindString(key_url, index, url);
+	return result1 == B_OK && result2 == B_OK ? B_OK : B_ERROR;
+}
+
+
+void
+DepotsSettings::AddRepository(BString name, BString url)
+{
+	int32 count = CountRepositories();
+	bool exists = false;
+	int index;
+	BString foundName, foundUrl;
+	// determine if the repository already exists
+	for(index = 0; index < count; index++)
+	{
+		if(GetRepository(index, &foundName, &foundUrl) == B_OK)
+		{
+			if(foundName == name && foundUrl == url)
+				exists = true;
+		}
+	}
+	if(!exists)
+	{
+		fSettings.AddString(key_name, name);
+		fSettings.AddString(key_url, url);
+		_SaveToFile();
+	}
 }
 
 
@@ -57,38 +95,8 @@ DepotsSettings::_ReadFromFile()
 	BFile file;
 	status_t status = file.SetTo(fFilePath.Path(), B_READ_ONLY);
 	if (status == B_OK) {
-		BMessage settings;
-		status = settings.Unflatten(&file);
-		if(status == B_OK){
-			// Get window location
-			settings.FindPoint(key_location, &fLocation);
-			
-			// Get repositories
-			int32 index, count;
-			count = fReposList.CountItems();
-			for(index=0; index < count; index++)
-			{
-				Repository *item = fReposList.ItemAt(0);
-				fReposList.RemoveItem(0);
-				delete item;
-			}
-			fReposList.MakeEmpty();
-			type_code type;
-			BString name, url;
-			settings.GetInfo(key_name, &type, &count);
-			for(index=0; index < count; index++)
-			{
-				status_t result1 = settings.FindString(key_name, &name);
-				status_t result2 = settings.FindString(key_url, &url);
-				if(result1 == B_OK && result2 == B_OK)
-				{
-					Repository *repo = new Repository();
-					repo->name = name;
-					repo->url = url;
-					fReposList.AddItem(repo);
-				}
-			}
-		}
+		fSettings.MakeEmpty();
+		status = fSettings.Unflatten(&file);
 	}
 	return status;
 }
@@ -98,23 +106,8 @@ status_t
 DepotsSettings::_SaveToFile()
 {
 	BFile file;
-	BMessage settings;
 	status_t status = file.SetTo(fFilePath.Path(), B_READ_WRITE | B_CREATE_FILE | B_ERASE_FILE);
-	if (status == B_OK) {
-		// Save window location
-		settings.AddPoint(key_location, fLocation);
-		
-		// Save repositories
-		int32 count = fReposList.CountItems();
-		int index;
-		for(index = 0; index < count; index++)
-		{
-			Repository *repo = fReposList.ItemAt(index);
-			settings.AddString(key_name, repo->name);
-			settings.AddString(key_url, repo->url);
-		}
-		
-		status = settings.Flatten(&file);
-	}
+	if (status == B_OK)
+		status = fSettings.Flatten(&file);
 	return status;
 }
