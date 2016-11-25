@@ -10,6 +10,7 @@
 #include <SeparatorView.h>
 #include <StringView.h>
 
+#include "constants.h"
 #include "DepotsView.h"
 
 #undef B_TRANSLATION_CONTEXT
@@ -32,8 +33,8 @@ DepotsView::DepotsView()
 		.End()
 		.Add(new BSeparatorView(B_HORIZONTAL))
 		.AddGroup(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
-			.Add(new BButton(B_TRANSLATE("Add" B_UTF8_ELLIPSIS)))
-			.Add(new BButton(B_TRANSLATE("Remove" B_UTF8_ELLIPSIS)))
+			.Add(new BButton(B_TRANSLATE("Add" B_UTF8_ELLIPSIS), new BMessage(ADD_REPO_WINDOW)))
+			.Add(new BButton(B_TRANSLATE("Remove" B_UTF8_ELLIPSIS), new BMessage(REMOVE_REPO_WINDOW)))
 		.End();
 }
 

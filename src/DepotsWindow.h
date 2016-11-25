@@ -20,7 +20,7 @@ public:
 							DepotsWindow(BRect size);
 							~DepotsWindow();
 	virtual	bool			QuitRequested();
-	
+	virtual void			MessageReceived(BMessage*);
 private:
 	DepotsSettings			fSettings;
 	BObjectList<Repository>	fReposList;

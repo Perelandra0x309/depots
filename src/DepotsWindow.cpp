@@ -11,6 +11,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "AddRepoWindow.h"
+#include "constants.h"
 #include "DepotsWindow.h"
 
 #undef B_TRANSLATION_CONTEXT
@@ -69,6 +71,40 @@ DepotsWindow::QuitRequested()
 
 
 void
+DepotsWindow::MessageReceived(BMessage* msg)
+{
+	switch(msg->what)
+	{
+		case ADD_REPO_WINDOW: {
+			new AddRepoWindow(Frame(), this);
+			break;
+		}
+		case ADD_REPO_URL: {
+			BString url;
+			status_t result = msg->FindString(key_url, &url);
+			if(result == B_OK)
+			{
+				
+	/*			BString command("pkgman add ");
+				command.Append(url);
+				int sysResult = system(command.String());
+				printf("Result of add:%i", sysResult);
+				if(sysResult==0)
+				{
+					_CreateRepoList();
+					_PopulateDepotsView();
+				}*/
+				
+			}
+			break;
+		}
+		default:
+			BWindow::MessageReceived(msg);
+	}
+}
+
+
+void
 DepotsWindow::_CreateRepoList()
 {
 	// Empty list
@@ -92,7 +128,7 @@ DepotsWindow::_CreateRepoList()
 	}
 	
 	// Get list of current enabled repositories from pkgman
-	int sysResult = system("pkgman list > /boot/home/pkglist");
+	int sysResult = system("pkgman list > /boot/home/pkglist");//TODO where to save temp file?  Delete after.
 //	printf("result=%i", sysResult);
 	BFile listFile("/boot/home/pkglist", B_READ_ONLY);
 	if(listFile.InitCheck()==B_OK)
@@ -105,7 +141,7 @@ DepotsWindow::_CreateRepoList()
 //		printf(text.String());
 		BStringList pkgmanOutput;
 		text.Split("\n", true, pkgmanOutput);
-		// Read each set of enabled repos from of 3 lines of pkgman output
+		// Read each set of enabled repos from 3 lines of pkgman output
 		while(pkgmanOutput.CountStrings() > 2)
 		{
 			name = pkgmanOutput.StringAt(0);
@@ -170,10 +206,7 @@ DepotsWindow::_AddRepo(BString name, BString url, bool enabled)
 		Repository *repo = new Repository;
 		repo->name = name;
 		repo->urlList.Add(url);
-		if(enabled)
-			repo->selectedUrl = 0;
-		else
-			repo->selectedUrl = -1;
+		repo->selectedUrl = enabled ? 0 : -1;
 		fReposList.AddItem(repo);
 		
 		//TODO Sort repo list---

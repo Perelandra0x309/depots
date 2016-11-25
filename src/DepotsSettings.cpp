@@ -2,6 +2,7 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
+#include "constants.h"
 #include "DepotsSettings.h"
 
 #include <File.h>
@@ -11,9 +12,6 @@
 #define B_TRANSLATION_CONTEXT "DepotsSettings"
 
 const char* settingsFilename = "Depots_settings";
-const char* key_location = "location";
-const char* key_name = "repo_name";
-const char* key_url = "repo_url";
 
 
 DepotsSettings::DepotsSettings()
