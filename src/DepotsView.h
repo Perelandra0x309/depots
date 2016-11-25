@@ -5,22 +5,27 @@
 #ifndef DEPOTS_VIEW_H
 #define DEPOTS_VIEW_H
 
+#include <ColumnListView.h>
 #include <GroupView.h>
 #include <View.h>
 
 #include "Repository.h"
 
+enum {
+	kEnabledColumn,
+	kRepositoryColumn,
+};
 
 class DepotsView : public BView {
 public:
 					DepotsView();
-//					~DepotsView();
+					~DepotsView();
 //	virtual void	AllAttached();
 //	virtual void	MessageReceived(BMessage*);
 	status_t		Clean();
 	void			AddRepository(Repository *repo);
 private:
-	BGroupView		*fReposView;
+	BColumnListView	*fListView;
 };
 
 #endif

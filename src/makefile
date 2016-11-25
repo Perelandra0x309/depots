@@ -6,9 +6,11 @@ SRCS = AddRepoWindow.cpp \
 	DepotsWindow.cpp \
 	DepotsSettings.cpp \
 	Depots.cpp
-LIBS := be localestub $(STDCPPLIBS)
+LIBS := be localestub tracker /boot/system/develop/lib/libcolumnlistview.a $(STDCPPLIBS)
 OPTIMIZE := FULL
 RDEFS = Depots.rdef
+LIBPATHS = /boot/system/develop/lib
+SYSTEM_INCLUDE_PATHS = /boot/system/develop/headers/private/interface
 LOCALES = en
 TARGET_DIR := .
 
