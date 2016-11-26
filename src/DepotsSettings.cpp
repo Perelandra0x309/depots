@@ -87,6 +87,28 @@ DepotsSettings::AddRepository(BString name, BString url)
 }
 
 
+void
+DepotsSettings::RemoveRepository(const char *url)
+{
+	int32 count = CountRepositories();
+	int index;
+	BString foundName, foundUrl;
+	// determine if the repository already exists
+	for(index = 0; index < count; index++)
+	{
+		if(GetRepository(index, &foundName, &foundUrl) == B_OK)
+		{
+			if(foundUrl.ICompare(url) == 0)
+			{
+				fSettings.RemoveData(key_name, index);
+				fSettings.RemoveData(key_url, index);
+				_SaveToFile();
+			}
+		}
+	}
+}
+
+
 status_t
 DepotsSettings::_ReadFromFile()
 {
@@ -96,6 +118,7 @@ DepotsSettings::_ReadFromFile()
 		fSettings.MakeEmpty();
 		status = fSettings.Unflatten(&file);
 	}
+	file.Unset();
 	return status;
 }
 
@@ -107,5 +130,6 @@ DepotsSettings::_SaveToFile()
 	status_t status = file.SetTo(fFilePath.Path(), B_READ_WRITE | B_CREATE_FILE | B_ERASE_FILE);
 	if (status == B_OK)
 		status = fSettings.Flatten(&file);
+	file.Unset();
 	return status;
 }

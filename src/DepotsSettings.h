@@ -19,6 +19,7 @@ public:
 	int32					CountRepositories();
 	status_t				GetRepository(int32 index, BString *name, BString *url);
 	void					AddRepository(BString name, BString url);
+	void					RemoveRepository(const char *url);
 	
 private:
 	BPath					fFilePath;

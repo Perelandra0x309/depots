@@ -4,12 +4,12 @@
  */
 #include <Application.h>
 #include <Catalog.h>
-#include <File.h>
+//#include <File.h>
 #include <LayoutBuilder.h>
 #include <Screen.h>
-#include <StringList.h>
-#include <stdlib.h>
-#include <stdio.h>
+//#include <StringList.h>
+//#include <stdlib.h>
+//#include <stdio.h>
 
 #include "AddRepoWindow.h"
 #include "constants.h"
@@ -21,20 +21,20 @@
 
 DepotsWindow::DepotsWindow(BRect size)
 	:
-	BWindow(size, B_TRANSLATE_SYSTEM_NAME("Depots"), B_TITLED_WINDOW, /*B_NOT_RESIZABLE |*/ B_NOT_ZOOMABLE |
+	BWindow(size, B_TRANSLATE_SYSTEM_NAME("Depots"), B_TITLED_WINDOW, B_NOT_ZOOMABLE |
 		B_ASYNCHRONOUS_CONTROLS /*| B_AUTO_UPDATE_SIZE_LIMITS*/)
 {
-	_CreateRepoList();
+//	_CreateRepoList();
 	
 	fView = new DepotsView();
-	_PopulateDepotsView();
+//	_PopulateDepotsView();
 	
 	BLayoutBuilder::Group<>(this, B_VERTICAL)
 		.Add(fView)
 	.End();
 	
 	// Location on screen
-	MoveTo(fSettings.GetLocation());
+//	MoveTo(fSettings.GetLocation());
 	BScreen screen;
 	BRect screenFrame = screen.Frame();
 	BRect frame = Frame();
@@ -42,6 +42,7 @@ DepotsWindow::DepotsWindow(BRect size)
 		|| screenFrame.top > frame.top || screenFrame.bottom < frame.bottom)
 		CenterOnScreen();
 	
+	ResizeTo(600, 400);//TODO temporary
 	Show();
 }
 
@@ -49,7 +50,7 @@ DepotsWindow::DepotsWindow(BRect size)
 DepotsWindow::~DepotsWindow()
 {
 	// Empty repositories list
-	int32 index, count;
+/*	int32 index, count;
 	count = fReposList.CountItems();
 	for(index=0; index < count; index++)
 	{
@@ -57,14 +58,14 @@ DepotsWindow::~DepotsWindow()
 		item->urlList.MakeEmpty();
 		fReposList.RemoveItem(0);
 		delete item;
-	}
+	}*/
 }
 
 
 bool
 DepotsWindow::QuitRequested()
 {
-	fSettings.SetLocation(Frame().LeftTop());
+//	fSettings.SetLocation(Frame().LeftTop());
 	be_app->PostMessage(B_QUIT_REQUESTED);
 	return BWindow::QuitRequested();
 }
@@ -84,18 +85,12 @@ DepotsWindow::MessageReceived(BMessage* msg)
 			status_t result = msg->FindString(key_url, &url);
 			if(result == B_OK)
 			{
-				
-	/*			BString command("pkgman add ");
-				command.Append(url);
-				int sysResult = system(command.String());
-				printf("Result of add:%i", sysResult);
-				if(sysResult==0)
-				{
-					_CreateRepoList();
-					_PopulateDepotsView();
-				}*/
-				
+				fView->AddManualRepository(url);
 			}
+			break;
+		}
+		case LIST_SELECTION_CHANGED: {
+			fView->MessageReceived(msg);
 			break;
 		}
 		default:
@@ -103,7 +98,7 @@ DepotsWindow::MessageReceived(BMessage* msg)
 	}
 }
 
-
+/*
 void
 DepotsWindow::_CreateRepoList()
 {
@@ -230,4 +225,4 @@ DepotsWindow::_PopulateDepotsView()
 		fView->AddRepository(repo);
 	}
 	fView->Invalidate();
-}
+}*/

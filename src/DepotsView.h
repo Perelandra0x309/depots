@@ -7,25 +7,55 @@
 
 #include <ColumnListView.h>
 #include <GroupView.h>
+#include <String.h>
 #include <View.h>
 
-#include "Repository.h"
+#include "DepotsSettings.h"
+//#include "Repository.h"
 
 enum {
+//	kCheckboxColumn,
 	kEnabledColumn,
-	kRepositoryColumn,
+	kNameColumn,
+	kUrlColumn
 };
+
+class RepoRow : public BRow {
+public:
+								RepoRow(const char* repo_name,
+									const char* repo_url, bool enabled);
+//	virtual						~RepoRow();
+		
+			const char*			Name() const { return fName.String(); }
+			const char*			Url() const { return fUrl.String(); }
+			void				SetHasSibling(bool value) { fHasSibling = value; }
+			void				SetEnabled(bool enabled);
+			bool				IsEnabled() { return fEnabled; }
+private:
+			BString				fName;
+			BString				fUrl;
+			bool				fHasSibling, fEnabled;
+};
+
 
 class DepotsView : public BView {
 public:
-					DepotsView();
-					~DepotsView();
-//	virtual void	AllAttached();
-//	virtual void	MessageReceived(BMessage*);
-	status_t		Clean();
-	void			AddRepository(Repository *repo);
+							DepotsView();
+							~DepotsView();
+	virtual void			AllAttached();
+	virtual void			MessageReceived(BMessage*);
+	status_t				Clean();
+	void					AddManualRepository(BString url);
 private:
-	BColumnListView	*fListView;
+	DepotsSettings			fSettings;
+	BColumnListView			*fListView;
+	BButton					*fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
+	BString					fTitleEnabled, fTitleName, fTitleUrl,
+							fLabelRemove, fLabelRemoveAll,
+							fLabelEnable, fLabelDisable, fLabelEnableAll, fLabelDisableAll;
+	void					_InitList();
+	void					_AddRepo(BString name, BString url, bool enabled);
+	void					_UpdateButtons();
 };
 
 #endif
