@@ -1,7 +1,8 @@
 NAME = Depots
 APP_MIME_SIG = application/x-vnd.BH-Depots
 TYPE = APP
-SRCS = AddRepoWindow.cpp \
+SRCS = TaskWindow.cpp \
+	AddRepoWindow.cpp \
 	DepotsView.cpp \
 	DepotsWindow.cpp \
 	DepotsSettings.cpp \

@@ -65,7 +65,7 @@ DepotsWindow::~DepotsWindow()
 bool
 DepotsWindow::QuitRequested()
 {
-//	fSettings.SetLocation(Frame().LeftTop());
+//TODO	fSettings.SetLocation(Frame().LeftTop());
 	be_app->PostMessage(B_QUIT_REQUESTED);
 	return BWindow::QuitRequested();
 }
@@ -76,6 +76,8 @@ DepotsWindow::MessageReceived(BMessage* msg)
 {
 	switch(msg->what)
 	{
+		//TODO capture pkgman commands run while Depots application is running
+		
 		case ADD_REPO_WINDOW: {
 			new AddRepoWindow(Frame(), this);
 			break;

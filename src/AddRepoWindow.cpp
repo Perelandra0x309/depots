@@ -2,15 +2,8 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
-#include <Application.h>
 #include <Catalog.h>
-#include <File.h>
 #include <LayoutBuilder.h>
-#include <Screen.h>
-#include <Size.h>
-#include <StringList.h>
-#include <stdlib.h>
-#include <stdio.h>
 
 
 #include "AddRepoWindow.h"
@@ -40,6 +33,7 @@ AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 			.Add(fCancelButton);
 	BLayoutBuilder::Group<>(this, B_VERTICAL)
 		.Add(fView);
+	fText->MakeFocus();
 	
 	// Location on screen
 	MoveTo(size.left + 20, size.top + 20);

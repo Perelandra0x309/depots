@@ -18,6 +18,7 @@
 //#include "CheckboxColumn.h"
 #include "constants.h"
 #include "DepotsView.h"
+#include "TaskWindow.h"
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "DepotsView"
@@ -74,8 +75,8 @@ DepotsView::DepotsView()
 	fListView->AddColumn(new BStringColumn(fTitleUrl, 500, col2width, 5000,
 		B_TRUNCATE_END), kUrlColumn);
 	
-	fEnableButton = new BButton(fLabelEnable, NULL);
-	fDisableButton = new BButton(fLabelDisable, NULL);
+	fEnableButton = new BButton(fLabelEnable, new BMessage(ENABLE_BUTTON_PRESSED));
+	fDisableButton = new BButton(fLabelDisable, new BMessage(DISABLE_BUTTON_PRESSED));
 	fAddButton = new BButton(B_TRANSLATE("Add" B_UTF8_ELLIPSIS), new BMessage(ADD_REPO_WINDOW));
 	fRemoveButton = new BButton(fLabelRemove, new BMessage(REMOVE_REPOS));
 	fEnableButton->SetEnabled(false);
@@ -116,6 +117,8 @@ DepotsView::AllAttached()
 {
 	BView::AllAttached();
 	fRemoveButton->SetTarget(this);
+	fEnableButton->SetTarget(this);
+	fDisableButton->SetTarget(this);
 	_InitList();
 }
 
@@ -137,6 +140,43 @@ DepotsView::MessageReceived(BMessage* msg)
 			break;
 		}
 		case LIST_SELECTION_CHANGED: {
+			_UpdateButtons();
+			break;
+		}
+		case ENABLE_BUTTON_PRESSED: {
+			BStringList params;
+			int32 index;
+			int32 count = fListView->CountRows();
+			// Add repository name of each selected item that is disabled in pkgman
+			for(index=0; index < count; index++)
+			{
+				RepoRow* rowItem = (RepoRow*)fListView->RowAt(index);
+				if(rowItem->IsSelected() && !rowItem->IsEnabled())
+					params.Add(rowItem->Url());
+			}
+			//TODO check for multiple selections of the same repository (pkgman won't like that)
+			
+			TaskWindow *win = new TaskWindow(Window()->Frame(), this->Looper(), msg->what, params);
+			Invalidate();
+			win->DoTasks();
+			_UpdatePkgmanList(true);
+			_UpdateButtons();
+			break;
+		}
+		case DISABLE_BUTTON_PRESSED: {
+			BStringList params;
+			int32 index;
+			int32 count = fListView->CountRows();
+			// Add repository name of each selected item that is enabled in pkgman
+			for(index=0; index < count; index++)
+			{
+				RepoRow* rowItem = (RepoRow*)fListView->RowAt(index);
+				if(rowItem->IsSelected() && rowItem->IsEnabled())
+					params.Add(rowItem->Name());
+			}
+			TaskWindow *win = new TaskWindow(Window()->Frame(), this->Looper(), msg->what, params);
+			win->DoTasks();
+			_UpdatePkgmanList(true);
 			_UpdateButtons();
 			break;
 		}
@@ -174,7 +214,10 @@ DepotsView::AddManualRepository(BString url)
 		}
 	}
 	BString name(B_TRANSLATE("Unknown"));
-	_AddRepo(name, url, false);
+	RepoRow *newRepo = _AddRepo(name, url, false);
+	fListView->DeselectAll();
+	fListView->AddToSelection(newRepo);
+	_UpdateButtons();
 	fSettings.AddRepository(name, url);
 }
 
@@ -191,6 +234,25 @@ DepotsView::_InitList()
 		status_t result = fSettings.GetRepository(index, &name, &url);
 		if(result == B_OK)
 			_AddRepo(name, url, false);
+	}
+	_UpdatePkgmanList();
+}
+
+
+void
+DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
+{
+	// Clear enabled status on all rows
+	if(updateStatusOnly)
+	{
+		int32 index;
+		int32 listCount = fListView->CountRows();
+		// Find duplicate
+		for(index=0; index < listCount; index++)
+		{
+			RepoRow *repoItem = (RepoRow*)(fListView->RowAt(index));
+			repoItem->SetEnabled(false);
+		}
 	}
 	
 	// Get list of current enabled repositories from pkgman
@@ -210,8 +272,8 @@ DepotsView::_InitList()
 		// Read each set of enabled repos from 3 lines of pkgman output
 		while(pkgmanOutput.CountStrings() > 2)
 		{
-			name = pkgmanOutput.StringAt(0);
-			url = pkgmanOutput.StringAt(1);
+			BString name = pkgmanOutput.StringAt(0);
+			BString url = pkgmanOutput.StringAt(1);
 			pkgmanOutput.Remove(0,3);
 			// remove leading tabs and spaces
 			int index = 0;
@@ -224,14 +286,15 @@ DepotsView::_InitList()
 				index++;
 			url.RemoveChars(0, index);
 			_AddRepo(name, url, true);
-			fSettings.AddRepository(name, url);
+			if(!updateStatusOnly)
+				fSettings.AddRepository(name, url);
 		}
 	}
 	fListView->SetSortColumn(fListView->ColumnAt(kUrlColumn), false, true);
 }
 
 
-void
+RepoRow*
 DepotsView::_AddRepo(BString name, BString url, bool enabled)
 {
 //	printf("Adding:%s:%s\n", name.String(), url.String());
@@ -249,7 +312,7 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 			if(repoItem->Url() == url)
 			{
 				repoItem->SetEnabled(enabled);
-				return; 
+				return repoItem; 
 			}
 			if(enabled)
 				repoItem->SetEnabled(false);
@@ -259,7 +322,7 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 
 	}
 	fListView->AddRow(newRepo);
-	
+	return newRepo;
 }
 
 
@@ -267,7 +330,7 @@ void
 DepotsView::_UpdateButtons()
 {
 	RepoRow *rowItem = (RepoRow*)fListView->CurrentSelection();
-	// At least one selected row
+	// At least one row is selected
 	if(rowItem)
 	{
 		bool someAreEnabled = false, someAreDisabled = false;
@@ -285,7 +348,7 @@ DepotsView::_UpdateButtons()
 					someAreDisabled = true;
 			}
 		}
-		// Change button labels depending on how many rows are selected
+		// Change button labels depending on which rows are selected
 		if(selectedCount>1)
 		{
 			fRemoveButton->SetLabel(fLabelRemoveAll);
@@ -299,9 +362,19 @@ DepotsView::_UpdateButtons()
 			fDisableButton->SetLabel(fLabelDisable);
 		}
 		// Set which buttons should be enabled
-		fEnableButton->SetEnabled(someAreDisabled);
-		fDisableButton->SetEnabled(someAreEnabled);
 		fRemoveButton->SetEnabled(true);
+		if(someAreEnabled && someAreDisabled)
+		{
+			// there are a mix of enabled and disabled depots selected
+			fEnableButton->SetEnabled(false);
+			fDisableButton->SetEnabled(false);	
+		}
+		else
+		{
+			fEnableButton->SetEnabled(someAreDisabled);
+			fDisableButton->SetEnabled(someAreEnabled);
+		}
+		
 	}
 	// No selected rows
 	else

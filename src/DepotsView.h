@@ -54,7 +54,8 @@ private:
 							fLabelRemove, fLabelRemoveAll,
 							fLabelEnable, fLabelDisable, fLabelEnableAll, fLabelDisableAll;
 	void					_InitList();
-	void					_AddRepo(BString name, BString url, bool enabled);
+	void					_UpdatePkgmanList(bool updateStatusOnly=false);
+	RepoRow*				_AddRepo(BString name, BString url, bool enabled);
 	void					_UpdateButtons();
 };
 
