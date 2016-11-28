@@ -246,10 +246,7 @@ DepotsView::MessageReceived(BMessage* msg)
 			//TODO check for multiple selections of the same repository (pkgman won't like that)
 			
 			TaskWindow *win = new TaskWindow(Window()->Frame(), this->Looper(), msg->what, params);
-			Invalidate();
-			win->DoTasks();
-			_UpdatePkgmanList(true);
-			_UpdateButtons();
+			win->PostMessage(DO_TASKS);
 			break;
 		}
 		case DISABLE_BUTTON_PRESSED: {
@@ -264,7 +261,10 @@ DepotsView::MessageReceived(BMessage* msg)
 					params.Add(rowItem->Name());
 			}
 			TaskWindow *win = new TaskWindow(Window()->Frame(), this->Looper(), msg->what, params);
-			win->DoTasks();
+			win->PostMessage(DO_TASKS);
+			break;
+		}
+		case UPDATE_LIST: {
 			_UpdatePkgmanList(true);
 			_UpdateButtons();
 			break;

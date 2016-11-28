@@ -34,6 +34,7 @@ TaskWindow::TaskWindow(BRect size, BLooper *looper, int32 what, BStringList para
 	fView->SetExplicitMinSize(BSize(size.Width(), B_SIZE_UNSET));
 	fStatus = new BStatusBar("statusbar", "");
 	fStatus->SetMaxValue(fParams.CountStrings()+1);
+	fStatus->SetTo(0, " ");
 //	fText = new BStringView("statustext", "Test");
 	fCancelButton = new BButton("Cancel", new BMessage(CANCEL_BUTTON_PRESSED));
 	
@@ -62,16 +63,22 @@ TaskWindow::MessageReceived(BMessage* msg)
 				Quit();
 			break;
 		}
+		case DO_TASKS: {
+			_DoTasks();
+			break;
+		}
 		default:
 			BWindow::MessageReceived(msg);
 	}
 }
 
 void
-TaskWindow::DoTasks()
+TaskWindow::_DoTasks()
 {
 	int32 count = fParams.CountStrings();
 	int32 index, errorCount=0;
+	fStatus->SetTo(0, " ");
+	UpdateIfNeeded();
 	for(index=0; index < count; index++)
 	{
 		switch(fWhat){
@@ -84,9 +91,10 @@ TaskWindow::DoTasks()
 				statusText.ReplaceFirst("%total%", countStr);
 				statusText.Append(" ");
 				statusText.Append(fParams.StringAt(index));
-				Lock();
+			//	Lock();
 				fStatus->Update(1, statusText);
-				Unlock();
+				UpdateIfNeeded();
+			//	Unlock();
 				BString command("yes | pkgman drop \"");
 				command.Append(fParams.StringAt(index));
 				command.Append("\" >> /boot/home/pkgout");
@@ -109,9 +117,10 @@ TaskWindow::DoTasks()
 				statusText.ReplaceFirst("%total%", countStr);
 				statusText.Append(" ");
 				statusText.Append(fParams.StringAt(index));
-				Lock();
+			//	Lock();
 				fStatus->Update(1, statusText);
-				Unlock();
+				UpdateIfNeeded();
+			//	Unlock();
 				BString command("yes | pkgman add \"");
 				command.Append(fParams.StringAt(index));
 				command.Append("\" >> /boot/home/pkgout");
@@ -127,7 +136,7 @@ TaskWindow::DoTasks()
 			}
 		}
 	}
-	Lock();
+//	Lock();
 	if(errorCount==0)
 		fStatus->Update(1, "Completed tasks");
 	else
@@ -143,5 +152,8 @@ TaskWindow::DoTasks()
 		fStatus->Update(1, finalText);
 	}
 	fCancelButton->SetLabel(fOkLabel);
-	Unlock();
+	UpdateIfNeeded();
+//	Unlock();
+	
+	msgLooper->PostMessage(UPDATE_LIST);
 }

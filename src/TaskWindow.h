@@ -19,7 +19,6 @@ public:
 							TaskWindow(BRect size, BLooper *looper, int32 what,
 											BStringList params);
 	virtual void			MessageReceived(BMessage*);
-	void					DoTasks();
 private:
 	BView					*fView;
 	BStatusBar				*fStatus;
@@ -29,6 +28,7 @@ private:
 	BStringList				fParams;
 	int32					fWhat;
 	BString					fOkLabel;
+	void					_DoTasks();
 };
 
 #endif

@@ -91,7 +91,8 @@ DepotsWindow::MessageReceived(BMessage* msg)
 			}
 			break;
 		}
-		case LIST_SELECTION_CHANGED: {
+		case LIST_SELECTION_CHANGED: 
+		case UPDATE_LIST: {
 			fView->MessageReceived(msg);
 			break;
 		}
