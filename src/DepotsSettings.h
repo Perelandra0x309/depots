@@ -5,10 +5,12 @@
 #ifndef DEPOTS_SETTINGS_H
 #define DEPOTS_SETTINGS_H
 
+#include <File.h>
 #include <Message.h>
 #include <Path.h>
 #include <Point.h>
 #include <String.h>
+#include <StringList.h>
 
 
 class DepotsSettings {
@@ -16,16 +18,16 @@ public:
 							DepotsSettings();
 	BPoint					GetLocation();
 	void					SetLocation(BPoint location);
-	int32					CountRepositories();
-	status_t				GetRepository(int32 index, BString *name, BString *url);
+	status_t				GetRepositories(int32 &repoCount, BStringList &nameList, BStringList &urlList);
 	void					AddRepository(BString name, BString url);
 	void					RemoveRepository(const char *url);
 	
 private:
 	BPath					fFilePath;
-	BMessage				fSettings;
-	status_t				_ReadFromFile();
-	status_t				_SaveToFile();
+	BFile					fFile;
+	status_t				fInitStatus;
+	BMessage				_ReadFromFile();
+	status_t				_SaveToFile(BMessage settings);
 };
 
 #endif

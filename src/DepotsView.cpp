@@ -315,14 +315,15 @@ void
 DepotsView::_InitList()
 {
 	// Get list of known repositories from the settings file
-	int32 index;
-	int32 repoCount = fSettings.CountRepositories();
+	int32 index, repoCount;
+	BStringList nameList, urlList;
+	status_t result = fSettings.GetRepositories(repoCount, nameList, urlList);
 	BString name, url;
 	for(index=0; index < repoCount; index++)
 	{
-		status_t result = fSettings.GetRepository(index, &name, &url);
-		if(result == B_OK)
-			_AddRepo(name, url, false);
+		name = nameList.StringAt(index);
+		url = urlList.StringAt(index);
+		_AddRepo(name, url, false);
 	}
 	_UpdatePkgmanList();
 }

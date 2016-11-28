@@ -5,7 +5,6 @@
 #include "constants.h"
 #include "DepotsSettings.h"
 
-#include <File.h>
 #include <FindDirectory.h>
 
 #undef B_TRANSLATION_CONTEXT
@@ -19,17 +18,17 @@ DepotsSettings::DepotsSettings()
 	status_t status = find_directory(B_USER_SETTINGS_DIRECTORY, &fFilePath);
 	if (status == B_OK) {
 		status = fFilePath.Append(settingsFilename);
-		if (status == B_OK)
-			_ReadFromFile();
 	}
+	fInitStatus = status;
 }
 
 
 BPoint
 DepotsSettings::GetLocation()
 {
+	BMessage settings(_ReadFromFile());
 	BPoint location;
-	fSettings.FindPoint(key_location, &location);
+	settings.FindPoint(key_location, &location);
 	return location;
 }
 
@@ -37,42 +36,60 @@ DepotsSettings::GetLocation()
 void
 DepotsSettings::SetLocation(BPoint location)
 {
-	fSettings.RemoveData(key_location);
-	fSettings.AddPoint(key_location, location);
-	_SaveToFile();
-}
-
-
-int32
-DepotsSettings::CountRepositories()
-{
-	type_code type;
-	int32 count;
-	fSettings.GetInfo(key_name, &type, &count);
-	return count;
+	BMessage settings(_ReadFromFile());
+	settings.RemoveData(key_location);
+	settings.AddPoint(key_location, location);
+	_SaveToFile(settings);
 }
 
 
 status_t
-DepotsSettings::GetRepository(int32 index, BString *name, BString *url)
+DepotsSettings::GetRepositories(int32 &repoCount, BStringList &nameList, BStringList &urlList)
 {
-	status_t result1 = fSettings.FindString(key_name, index, name);
-	status_t result2 = fSettings.FindString(key_url, index, url);
-	return result1 == B_OK && result2 == B_OK ? B_OK : B_ERROR;
+	BMessage settings(_ReadFromFile());
+	type_code type;
+	int32 count;
+	settings.GetInfo(key_name, &type, &count);
+	
+	status_t result = B_OK;
+	int32 index, total=0;
+	BString foundName, foundUrl;
+	// get each repository and add to lists
+	for(index = 0; index < count; index++)
+	{
+		status_t result1 = settings.FindString(key_name, index, &foundName);
+		status_t result2 = settings.FindString(key_url, index, &foundUrl);
+		if(result1 == B_OK && result2 == B_OK)
+		{
+			nameList.Add(foundName);
+			urlList.Add(foundUrl);
+			total++;
+		}
+		else
+			result = B_ERROR;
+	}
+	repoCount = total;
+	return result;
 }
 
 
 void
 DepotsSettings::AddRepository(BString name, BString url)
 {
-	int32 count = CountRepositories();
+	BMessage settings(_ReadFromFile());
+	type_code type;
+	int32 count;
+	settings.GetInfo(key_name, &type, &count);
+	
 	bool exists = false;
-	int index;
+	int32 index;
 	BString foundName, foundUrl;
 	// determine if the repository already exists
 	for(index = 0; index < count; index++)
 	{
-		if(GetRepository(index, &foundName, &foundUrl) == B_OK)
+		status_t result1 = settings.FindString(key_name, index, &foundName);
+		status_t result2 = settings.FindString(key_url, index, &foundUrl);
+		if(result1 == B_OK && result2 == B_OK)
 		{
 			if(foundName == name && foundUrl == url)
 				exists = true;
@@ -80,9 +97,9 @@ DepotsSettings::AddRepository(BString name, BString url)
 	}
 	if(!exists)
 	{
-		fSettings.AddString(key_name, name);
-		fSettings.AddString(key_url, url);
-		_SaveToFile();
+		settings.AddString(key_name, name);
+		settings.AddString(key_url, url);
+		_SaveToFile(settings);
 	}
 }
 
@@ -90,46 +107,49 @@ DepotsSettings::AddRepository(BString name, BString url)
 void
 DepotsSettings::RemoveRepository(const char *url)
 {
-	int32 count = CountRepositories();
-	int index;
+	BMessage settings(_ReadFromFile());
+	type_code type;
+	int32 count;
+	settings.GetInfo(key_name, &type, &count);
+	
+	int32 index;
 	BString foundName, foundUrl;
 	// determine if the repository already exists
 	for(index = 0; index < count; index++)
 	{
-		if(GetRepository(index, &foundName, &foundUrl) == B_OK)
+		status_t result1 = settings.FindString(key_name, index, &foundName);
+		status_t result2 = settings.FindString(key_url, index, &foundUrl);
+		if(result1 == B_OK && result2 == B_OK)
 		{
 			if(foundUrl.ICompare(url) == 0)
 			{
-				fSettings.RemoveData(key_name, index);
-				fSettings.RemoveData(key_url, index);
-				_SaveToFile();
+				settings.RemoveData(key_name, index);
+				settings.RemoveData(key_url, index);
+				_SaveToFile(settings);
 			}
 		}
 	}
 }
 
 
-status_t
+BMessage
 DepotsSettings::_ReadFromFile()
 {
-	BFile file;
-	status_t status = file.SetTo(fFilePath.Path(), B_READ_ONLY);
-	if (status == B_OK) {
-		fSettings.MakeEmpty();
-		status = fSettings.Unflatten(&file);
-	}
-	file.Unset();
-	return status;
+	BMessage settings;
+	status_t status = fFile.SetTo(fFilePath.Path(), B_READ_ONLY);
+	if (status == B_OK)
+		status = settings.Unflatten(&fFile);
+	fFile.Unset();
+	return settings;
 }
 
 
 status_t
-DepotsSettings::_SaveToFile()
+DepotsSettings::_SaveToFile(BMessage settings)
 {
-	BFile file;
-	status_t status = file.SetTo(fFilePath.Path(), B_READ_WRITE | B_CREATE_FILE | B_ERASE_FILE);
+	status_t status = fFile.SetTo(fFilePath.Path(), B_READ_WRITE | B_CREATE_FILE | B_ERASE_FILE);
 	if (status == B_OK)
-		status = fSettings.Flatten(&file);
-	file.Unset();
+		status = settings.Flatten(&fFile);
+	fFile.Unset();
 	return status;
 }
