@@ -11,10 +11,8 @@
 #include <View.h>
 
 #include "DepotsSettings.h"
-//#include "Repository.h"
 
 enum {
-//	kCheckboxColumn,
 	kEnabledColumn,
 	kNameColumn,
 	kUrlColumn
@@ -53,6 +51,7 @@ private:
 	BString					fTitleEnabled, fTitleName, fTitleUrl,
 							fLabelRemove, fLabelRemoveAll,
 							fLabelEnable, fLabelDisable, fLabelEnableAll, fLabelDisableAll;
+	bool					fUsingMinimalButtons;//TODO remove when confident this works
 	void					_InitList();
 	void					_UpdatePkgmanList(bool updateStatusOnly=false);
 	RepoRow*				_AddRepo(BString name, BString url, bool enabled);

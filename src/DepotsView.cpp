@@ -15,7 +15,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-//#include "CheckboxColumn.h"
 #include "constants.h"
 #include "DepotsView.h"
 #include "TaskWindow.h"
@@ -52,22 +51,22 @@ RepoRow::SetEnabled(bool enabled)
 DepotsView::DepotsView()
 	:
 	BView("depotsview", B_SUPPORTS_LAYOUT),
-	fTitleEnabled(B_TRANSLATE("Enabled")),
-	fTitleName(B_TRANSLATE("Name")),
-	fTitleUrl(B_TRANSLATE("URL")),
-	fLabelRemove(B_TRANSLATE("Remove")),
-	fLabelRemoveAll(B_TRANSLATE("Remove All")),
-	fLabelEnable(B_TRANSLATE("Enable")),
-	fLabelEnableAll(B_TRANSLATE("Enable All")),
-	fLabelDisable(B_TRANSLATE("Disable")),
-	fLabelDisableAll(B_TRANSLATE("Disable All"))
+	fTitleEnabled(B_TRANSLATE_COMMENT("Enabled", "Column title")),
+	fTitleName(B_TRANSLATE_COMMENT("Name", "Column title")),
+	fTitleUrl(B_TRANSLATE_COMMENT("URL", "Column title")),
+	fLabelRemove(B_TRANSLATE_COMMENT("Remove", "Button label")),
+	fLabelRemoveAll(B_TRANSLATE_COMMENT("Remove All", "Button label")),
+	fLabelEnable(B_TRANSLATE_COMMENT("Enable", "Button label")),
+	fLabelEnableAll(B_TRANSLATE_COMMENT("Enable All", "Button label")),
+	fLabelDisable(B_TRANSLATE_COMMENT("Disable", "Button label")),
+	fLabelDisableAll(B_TRANSLATE_COMMENT("Disable All", "Button label")),
+	fUsingMinimalButtons(true)
 {
 	fListView = new BColumnListView("list", B_NAVIGABLE, B_PLAIN_BORDER);
 	fListView->SetSelectionMessage(new BMessage(LIST_SELECTION_CHANGED));
 	float col0width = be_plain_font->StringWidth(fTitleEnabled) + 15;
 	float col1width = be_plain_font->StringWidth(fTitleName) + 15;
 	float col2width = be_plain_font->StringWidth(fTitleUrl) + 15;
-//	fListView->AddColumn(new CheckboxColumn(B_TRANSLATE("Check"), 90, col0width, 100), kCheckboxColumn);
 	fListView->AddColumn(new BStringColumn(fTitleEnabled, col0width, col0width, col0width,
 		B_TRUNCATE_END, B_ALIGN_CENTER), kEnabledColumn);
 	fListView->AddColumn(new BStringColumn(fTitleName, 90, col1width, 300,
@@ -77,32 +76,122 @@ DepotsView::DepotsView()
 	
 	fEnableButton = new BButton(fLabelEnable, new BMessage(ENABLE_BUTTON_PRESSED));
 	fDisableButton = new BButton(fLabelDisable, new BMessage(DISABLE_BUTTON_PRESSED));
-	fAddButton = new BButton(B_TRANSLATE("Add" B_UTF8_ELLIPSIS), new BMessage(ADD_REPO_WINDOW));
-	fRemoveButton = new BButton(fLabelRemove, new BMessage(REMOVE_REPOS));
 	fEnableButton->SetEnabled(false);
 	fDisableButton->SetEnabled(false);
+	
+
+if(fUsingMinimalButtons) {
+	// ---Minimal buttons option---
+	BView *button1View = new BView("button1View", B_WILL_DRAW);
+	int buttonSize = 25;
+	BRect btnSize(0,0,buttonSize,buttonSize);
+	fAddButton = new BButton(btnSize, "plus", "+", new BMessage(ADD_REPO_WINDOW));
+//	fAddButton->SetExplicitMaxSize(BSize(25,25));
+//	fAddButton->SetExplicitAlignment(BAlignment(B_ALIGN_LEFT, B_ALIGN_VERTICAL_CENTER));
+//	fAddButton->SetFlat(true);
+	button1View->SetExplicitMinSize(BSize(buttonSize, buttonSize));
+	
+	BView *button2View = new BView("button2View", B_WILL_DRAW);
+	fRemoveButton = new BButton(btnSize, "minus", "-", new BMessage(REMOVE_REPOS));
+//	fRemoveButton->SetExplicitMaxSize(BSize(25,25));
+//	fRemoveButton->SetExplicitAlignment(BAlignment(B_ALIGN_LEFT, B_ALIGN_VERTICAL_CENTER));
+//	fRemoveButton->SetFlat(true);
 	fRemoveButton->SetEnabled(false);
-		
-	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
+	button2View->SetExplicitMinSize(BSize(buttonSize, buttonSize));
+	
+	button1View->AddChild(fAddButton);
+	button2View->AddChild(fRemoveButton);
+	
+	int buttonSpacing = 1;
+	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
 		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
-//		.SetInsets(0, B_USE_WINDOW_SPACING, 0, B_USE_WINDOW_SPACING)
-//		.AddGroup(B_VERTICAL, B_USE_DEFAULT_SPACING)
-//			.SetInsets(B_USE_DEFAULT_SPACING, 0, B_USE_DEFAULT_SPACING, 0)
-			.Add(new BStringView("instruction", B_TRANSLATE("Select depots to use in HaikuDepot:")))
-			.Add(fListView)
+		.Add(new BStringView("instruction", B_TRANSLATE("Select depots to use in HaikuDepot:")))
+		.AddStrut(B_USE_DEFAULT_SPACING)
+		.Add(fListView, 1)
+		
+		.AddGroup(B_HORIZONTAL, 0, 0.0)
+			// Add and Remove buttons
+			.AddGroup(B_VERTICAL, 0, 0.0)
+				.AddGroup(B_HORIZONTAL, 0, 0.0)
+					.Add(new BSeparatorView(B_VERTICAL))
+					.AddGroup(B_VERTICAL, 0, 0.0)
+						.AddGroup(B_HORIZONTAL, buttonSpacing, 0.0)
+							.SetInsets(buttonSpacing,buttonSpacing,buttonSpacing,buttonSpacing+1)
+							.Add(button1View)
+							.Add(button2View)
+						.End()
+						.Add(new BSeparatorView(B_HORIZONTAL))
+					.End()
+					.Add(new BSeparatorView(B_VERTICAL))
+				.End()
+				.AddGlue()
+			.End()
+			// Enable and Disable buttons
 			.AddGroup(B_HORIZONTAL)
-				.Add(fAddButton)
-				.Add(fRemoveButton)
+				.SetInsets(B_USE_DEFAULT_SPACING,B_USE_DEFAULT_SPACING,B_USE_DEFAULT_SPACING,0)
 				.AddGlue()
 				.Add(fEnableButton)
 				.Add(fDisableButton)
-				.End();
-	/*	.End()
-		.Add(new BSeparatorView(B_HORIZONTAL))
-		.AddGroup(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
+			.End()
+		.End();
+		
+		/* Saved- buttons in seperate horizontal groups
+		.AddGroup(B_HORIZONTAL, 0, 0.0)
+			.Add(new BSeparatorView(B_VERTICAL))
+			.AddGroup(B_VERTICAL, 0, 0.0)
+				.AddGroup(B_HORIZONTAL, 3, 0.0)
+					.SetInsets(3,3,3,3)
+	//				.Add(plusButton, 0.0)
+	//				.Add(minusButton, 0.0)
+					//.Add(new BSeparatorView(B_VERTICAL))
+					.Add(button1View)
+					//.Add(new BSeparatorView(B_VERTICAL))//, B_FANCY_BORDER))
+					.Add(button2View)
+					//.Add(new BSeparatorView(B_VERTICAL))
+	//				.AddGlue()
+				.End()
+				.Add(new BSeparatorView(B_HORIZONTAL))
+			.End()
+			.Add(new BSeparatorView(B_VERTICAL))
+			.AddGroup(B_HORIZONTAL, 0, 1)
+	//			.Add(new BSeparatorView(B_VERTICAL))
+				.AddGlue()
+			.End()
+		.End()
+	//	.Add(new BSeparatorView(B_HORIZONTAL))
+		.AddGroup(B_HORIZONTAL)
+		//	.Add(fAddButton)
+		//	.Add(fRemoveButton)
+			.AddGlue()
+			.Add(fEnableButton)
+			.Add(fDisableButton)
+		.End();
+		*/
+		
+	// ---End minimal buttons section---
+}
+else {
+	
+		// ---Standard buttons option---
+	fAddButton = new BButton(B_TRANSLATE_COMMENT("Add" B_UTF8_ELLIPSIS, "Button label"),
+							new BMessage(ADD_REPO_WINDOW));
+	fRemoveButton = new BButton(fLabelRemove, new BMessage(REMOVE_REPOS));
+	fRemoveButton->SetEnabled(false);
+	
+	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
+		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
+		.Add(new BStringView("instruction", B_TRANSLATE("Select depots to use in HaikuDepot:")))
+		.Add(fListView)
+		.AddGroup(B_HORIZONTAL)
 			.Add(fAddButton)
 			.Add(fRemoveButton)
-		.End();*/
+			.AddGlue()
+			.Add(fEnableButton)
+			.Add(fDisableButton)
+		.End();
+	// -- End standard buttons section
+}
+
 }
 
 
@@ -351,13 +440,15 @@ DepotsView::_UpdateButtons()
 		// Change button labels depending on which rows are selected
 		if(selectedCount>1)
 		{
-			fRemoveButton->SetLabel(fLabelRemoveAll);
+			if(!fUsingMinimalButtons)
+				fRemoveButton->SetLabel(fLabelRemoveAll);
 			fEnableButton->SetLabel(fLabelEnableAll);
 			fDisableButton->SetLabel(fLabelDisableAll);
 		}
 		else
 		{
-			fRemoveButton->SetLabel(fLabelRemove);
+			if(!fUsingMinimalButtons)
+				fRemoveButton->SetLabel(fLabelRemove);
 			fEnableButton->SetLabel(fLabelEnable);
 			fDisableButton->SetLabel(fLabelDisable);
 		}
@@ -379,7 +470,8 @@ DepotsView::_UpdateButtons()
 	// No selected rows
 	else
 	{
-		fRemoveButton->SetLabel(fLabelRemove);
+		if(!fUsingMinimalButtons)
+			fRemoveButton->SetLabel(fLabelRemove);
 		fEnableButton->SetLabel(fLabelEnable);
 		fDisableButton->SetLabel(fLabelDisable);
 		fEnableButton->SetEnabled(false);

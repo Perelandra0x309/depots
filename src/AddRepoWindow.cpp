@@ -21,7 +21,7 @@ AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 {
 	fView = new BView("view", B_SUPPORTS_LAYOUT);
 	fView->SetExplicitMinSize(BSize(size.Width(), B_SIZE_UNSET));
-	fText = new BTextControl("text", "Repository url:", "", new BMessage(ADD_BUTTON_PRESSED));
+	fText = new BTextControl("text", "Depot url:", "", new BMessage(ADD_BUTTON_PRESSED));
 	fAddButton = new BButton("Add", new BMessage(ADD_BUTTON_PRESSED));
 	fCancelButton = new BButton("Cancel", new BMessage(CANCEL_BUTTON_PRESSED));
 	
