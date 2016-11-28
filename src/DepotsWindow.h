@@ -11,21 +11,17 @@
 
 #include "DepotsSettings.h"
 #include "DepotsView.h"
-//#include "Repository.h"
 
 
 class DepotsWindow : public BWindow {
 public:
 							DepotsWindow(BRect size);
-							~DepotsWindow();
+//							~DepotsWindow();
 	virtual	bool			QuitRequested();
 	virtual void			MessageReceived(BMessage*);
 private:
-//	DepotsSettings			fSettings;
+	DepotsSettings			fSettings;
 	DepotsView				*fView;
-//	void					_CreateRepoList();
-//	void					_AddRepo(BString name, BString url, bool enabled);
-//	void					_PopulateDepotsView();
 };
 
 #endif

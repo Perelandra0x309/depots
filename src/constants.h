@@ -5,7 +5,7 @@
 #ifndef DEPOTS_CONSTANTS_H
 #define DEPOTS_CONSTANTS_H
 
-#define key_location "location"
+#define key_frame "frame"
 #define key_name "repo_name"
 #define key_url "repo_url"
 

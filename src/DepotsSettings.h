@@ -9,6 +9,7 @@
 #include <Message.h>
 #include <Path.h>
 #include <Point.h>
+#include <Rect.h>
 #include <String.h>
 #include <StringList.h>
 
@@ -16,8 +17,8 @@
 class DepotsSettings {
 public:
 							DepotsSettings();
-	BPoint					GetLocation();
-	void					SetLocation(BPoint location);
+	BRect					GetFrame();
+	void					SetFrame(BRect frame);
 	status_t				GetRepositories(int32 &repoCount, BStringList &nameList, BStringList &urlList);
 	void					AddRepository(BString name, BString url);
 	void					RemoveRepository(const char *url);

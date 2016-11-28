@@ -23,22 +23,22 @@ DepotsSettings::DepotsSettings()
 }
 
 
-BPoint
-DepotsSettings::GetLocation()
+BRect
+DepotsSettings::GetFrame()
 {
 	BMessage settings(_ReadFromFile());
-	BPoint location;
-	settings.FindPoint(key_location, &location);
-	return location;
+	BRect frame;
+	settings.FindRect(key_frame, &frame);
+	return frame;
 }
 
 
 void
-DepotsSettings::SetLocation(BPoint location)
+DepotsSettings::SetFrame(BRect frame)
 {
 	BMessage settings(_ReadFromFile());
-	settings.RemoveData(key_location);
-	settings.AddPoint(key_location, location);
+	settings.RemoveData(key_frame);
+	settings.AddRect(key_frame, frame);
 	_SaveToFile(settings);
 }
 
