@@ -129,7 +129,7 @@ TaskWindow::_DoTasks()
 				{
 					BString errorText(B_TRANSLATE("There was an error enabling the depot"));
 					errorText.Append(" ").Append(fParams.StringAt(index));
-					(new BAlert("error", errorText, fOkLabel))->Go();
+					(new BAlert("error", errorText, fOkLabel))->Go(NULL);
 					errorCount++;
 				}
 				break;
@@ -156,4 +156,6 @@ TaskWindow::_DoTasks()
 //	Unlock();
 	
 	msgLooper->PostMessage(UPDATE_LIST);
+//	if(errorCount==0)
+		Quit();
 }

@@ -89,10 +89,14 @@ DepotsSettings::AddRepository(BString name, BString url)
 	{
 		status_t result1 = settings.FindString(key_name, index, &foundName);
 		status_t result2 = settings.FindString(key_url, index, &foundUrl);
-		if(result1 == B_OK && result2 == B_OK)
+		if(result2 == B_OK && foundUrl == url)
 		{
-			if(foundName == name && foundUrl == url)
-				exists = true;
+			if(result1 == B_OK && foundName != name)
+			{
+				settings.ReplaceString(key_name, index, name);
+				_SaveToFile(settings);
+			}
+			exists = true;
 		}
 	}
 	if(!exists)

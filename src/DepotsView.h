@@ -25,6 +25,7 @@ public:
 //	virtual						~RepoRow();
 		
 			const char*			Name() const { return fName.String(); }
+			void				SetName(const char *name);
 			const char*			Url() const { return fUrl.String(); }
 			void				SetHasSibling(bool value) { fHasSibling = value; }
 			void				SetEnabled(bool enabled);

@@ -48,6 +48,15 @@ RepoRow::SetEnabled(bool enabled)
 }
 
 
+void
+RepoRow::SetName(const char *name)
+{
+	BStringField *field = (BStringField*)GetField(kNameColumn);
+	field->SetString(name);
+	fName.SetTo(name); 
+}
+
+
 DepotsView::DepotsView()
 	:
 	BView("depotsview", B_SUPPORTS_LAYOUT),
@@ -221,6 +230,7 @@ DepotsView::MessageReceived(BMessage* msg)
 			RepoRow *rowItem = (RepoRow*)fListView->CurrentSelection();
 			while(rowItem)
 			{
+				//TODO check if repo is enabled- drop it first?
 				fListView->RemoveRow(rowItem);
 				fSettings.RemoveRepository(rowItem->Url());
 				delete rowItem;
@@ -233,20 +243,36 @@ DepotsView::MessageReceived(BMessage* msg)
 			break;
 		}
 		case ENABLE_BUTTON_PRESSED: {
-			BStringList params;
+			BStringList params, names;
 			int32 index;
 			int32 count = fListView->CountRows();
+			bool paramsOK = true;
 			// Add repository name of each selected item that is disabled in pkgman
 			for(index=0; index < count; index++)
 			{
 				RepoRow* rowItem = (RepoRow*)fListView->RowAt(index);
 				if(rowItem->IsSelected() && !rowItem->IsEnabled())
+				{
 					params.Add(rowItem->Url());
+					// Check if there are multiple selections of the same depot, pkgman won't like that
+					if(names.HasString(rowItem->Name()))
+					{
+						(new BAlert("duplicate", B_TRANSLATE_COMMENT("You can only enable one URL for "
+										"each depot.  Please change your selections.", "Error message"),
+										B_TRANSLATE_COMMENT("OK", "Alert button label"), NULL, NULL,
+										B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
+						paramsOK = false;
+						break;
+					}
+					else
+						names.Add(rowItem->Name());
+				}
 			}
-			//TODO check for multiple selections of the same repository (pkgman won't like that)
-			
-			TaskWindow *win = new TaskWindow(Window()->Frame(), this->Looper(), msg->what, params);
-			win->PostMessage(DO_TASKS);
+			if(paramsOK)
+			{
+				TaskWindow *win = new TaskWindow(Window()->Frame(), this->Looper(), msg->what, params);
+				win->PostMessage(DO_TASKS);
+			}
 			break;
 		}
 		case DISABLE_BUTTON_PRESSED: {
@@ -296,7 +322,7 @@ DepotsView::AddManualRepository(BString url)
 	for(index=0; index < listCount; index++)
 	{
 		RepoRow *repoItem = (RepoRow*)(fListView->RowAt(index));
-		if(repoItem->Url() == url)
+		if(url.ICompare(repoItem->Url()) == 0)
 		{
 			(new BAlert("duplicate", B_TRANSLATE("Depot already exists."), B_TRANSLATE("OK")))->Go();
 			return; 
@@ -380,6 +406,7 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 				fSettings.AddRepository(name, url);
 		}
 	}
+	//TODO move this
 	fListView->SetSortColumn(fListView->ColumnAt(kUrlColumn), false, true);
 }
 
@@ -388,31 +415,41 @@ RepoRow*
 DepotsView::_AddRepo(BString name, BString url, bool enabled)
 {
 //	printf("Adding:%s:%s\n", name.String(), url.String());
-	RepoRow *newRepo = new RepoRow(name, url, enabled);
-	bool foundSibling = false;
+//	RepoRow *newRepo = new RepoRow(name, url, enabled);
+	RepoRow *addedRow=NULL;
+//	bool foundSibling = false;
 	int32 index;
 	int32 listCount = fListView->CountRows();
 	// Find siblings
 	for(index=0; index < listCount; index++)
 	{
 		RepoRow *repoItem = (RepoRow*)(fListView->RowAt(index));
-		if(repoItem->Name() == name)
+		if(url.ICompare(repoItem->Url()) == 0)
 		{
-			// duplicate url- match found, update enabled value
-			if(repoItem->Url() == url)
+			// update name and enabled values
+			if(name.Compare(repoItem->Name()) != 0)
 			{
-				repoItem->SetEnabled(enabled);
-				return repoItem; 
+				repoItem->SetName(name.String());
+				fSettings.AddRepository(name, url);
 			}
-			if(enabled)
-				repoItem->SetEnabled(false);
-			repoItem->SetHasSibling(true);
-			newRepo->SetHasSibling(true);
+			repoItem->SetEnabled(enabled);
+			addedRow = repoItem;
+		}
+		else if(name.Compare(repoItem->Name()) == 0)
+		{	
+			repoItem->SetEnabled(false);
+//			repoItem->SetHasSibling(true);
+//			if(addedRow)
+//				addedRow->SetHasSibling(true);
 		}
 
 	}
-	fListView->AddRow(newRepo);
-	return newRepo;
+	if(addedRow == NULL)
+	{
+		addedRow = new RepoRow(name, url, enabled);
+		fListView->AddRow(addedRow);
+	}
+	return addedRow;
 }
 
 
@@ -454,7 +491,7 @@ DepotsView::_UpdateButtons()
 			fDisableButton->SetLabel(fLabelDisable);
 		}
 		// Set which buttons should be enabled
-		fRemoveButton->SetEnabled(true);
+		fRemoveButton->SetEnabled(!someAreEnabled);
 		if(someAreEnabled && someAreDisabled)
 		{
 			// there are a mix of enabled and disabled depots selected

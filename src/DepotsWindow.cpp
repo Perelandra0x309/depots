@@ -18,15 +18,16 @@
 DepotsWindow::DepotsWindow(BRect size)
 	:
 	BWindow(size, B_TRANSLATE_SYSTEM_NAME("Depots"), B_TITLED_WINDOW, B_NOT_ZOOMABLE |
-		B_ASYNCHRONOUS_CONTROLS /*| B_AUTO_UPDATE_SIZE_LIMITS*/)
+		B_ASYNCHRONOUS_CONTROLS)
 {
 	fView = new DepotsView();
 	BLayoutBuilder::Group<>(this, B_VERTICAL)
 		.Add(fView)
 	.End();
-	//TODO explicit min size
 	
-	// Location on screen
+	// Size and location on screen
+	BSize viewSize(fView->MinSize());
+	SetSizeLimits(viewSize.Width(), 9999, viewSize.Height(), 9999);
 	BRect frame = fSettings.GetFrame();
 	ResizeTo(frame.Width(), frame.Height());
 	BScreen screen;
