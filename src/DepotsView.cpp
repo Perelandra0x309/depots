@@ -95,29 +95,31 @@ if(fUsingMinimalButtons) {
 	int buttonSize = 25;
 	BRect btnSize(0,0,buttonSize,buttonSize);
 	fAddButton = new BButton(btnSize, "plus", "+", new BMessage(ADD_REPO_WINDOW));
-//	fAddButton->SetExplicitMaxSize(BSize(25,25));
-//	fAddButton->SetExplicitAlignment(BAlignment(B_ALIGN_LEFT, B_ALIGN_VERTICAL_CENTER));
-//	fAddButton->SetFlat(true);
 	button1View->SetExplicitMinSize(BSize(buttonSize, buttonSize));
 	
 	BView *button2View = new BView("button2View", B_WILL_DRAW);
 	fRemoveButton = new BButton(btnSize, "minus", "-", new BMessage(REMOVE_REPOS));
-//	fRemoveButton->SetExplicitMaxSize(BSize(25,25));
-//	fRemoveButton->SetExplicitAlignment(BAlignment(B_ALIGN_LEFT, B_ALIGN_VERTICAL_CENTER));
-//	fRemoveButton->SetFlat(true);
 	fRemoveButton->SetEnabled(false);
 	button2View->SetExplicitMinSize(BSize(buttonSize, buttonSize));
 	
+	BView *button3View = new BView("button3View", B_WILL_DRAW);
+	BButton *aboutButton = new BButton(btnSize, "about", "?", new BMessage(SHOW_ABOUT));
+	button3View->SetExplicitMinSize(BSize(buttonSize, buttonSize));
+	
 	button1View->AddChild(fAddButton);
 	button2View->AddChild(fRemoveButton);
+	button3View->AddChild(aboutButton);
 	
 	int buttonSpacing = 1;
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
 		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
-		.Add(new BStringView("instruction", B_TRANSLATE("Select depots to use in HaikuDepot:")))
-		.AddStrut(B_USE_DEFAULT_SPACING)
+		.AddGroup(B_HORIZONTAL, 0, 0.0)
+			.Add(new BStringView("instruction", B_TRANSLATE("Select depots to use in HaikuDepot:")), 0.0)
+			.AddGlue()
+			.Add(button3View, 0.0)
+		.End()
+		.AddStrut(3)//B_USE_DEFAULT_SPACING)
 		.Add(fListView, 1)
-		
 		.AddGroup(B_HORIZONTAL, 0, 0.0)
 			// Add and Remove buttons
 			.AddGroup(B_VERTICAL, 0, 0.0)
@@ -230,7 +232,6 @@ DepotsView::MessageReceived(BMessage* msg)
 			RepoRow *rowItem = (RepoRow*)fListView->CurrentSelection();
 			while(rowItem)
 			{
-				//TODO check if repo is enabled- drop it first?
 				fListView->RemoveRow(rowItem);
 				fSettings.RemoveRepository(rowItem->Url());
 				delete rowItem;
@@ -352,6 +353,8 @@ DepotsView::_InitList()
 		_AddRepo(name, url, false);
 	}
 	_UpdatePkgmanList();
+	fListView->SetSortColumn(fListView->ColumnAt(kUrlColumn), false, true);
+	fListView->ResizeAllColumnsToPreferred();
 }
 
 
@@ -406,8 +409,6 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 				fSettings.AddRepository(name, url);
 		}
 	}
-	//TODO move this
-	fListView->SetSortColumn(fListView->ColumnAt(kUrlColumn), false, true);
 }
 
 

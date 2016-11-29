@@ -79,6 +79,10 @@ DepotsWindow::MessageReceived(BMessage* msg)
 			fView->MessageReceived(msg);
 			break;
 		}
+		case SHOW_ABOUT: {
+			be_app->AboutRequested();
+			break;
+		}
 		default:
 			BWindow::MessageReceived(msg);
 	}

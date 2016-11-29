@@ -151,7 +151,7 @@ DepotsSettings::_ReadFromFile()
 status_t
 DepotsSettings::_SaveToFile(BMessage settings)
 {
-	status_t status = fFile.SetTo(fFilePath.Path(), B_READ_WRITE | B_CREATE_FILE | B_ERASE_FILE);
+	status_t status = fFile.SetTo(fFilePath.Path(), B_WRITE_ONLY | B_CREATE_FILE | B_ERASE_FILE);
 	if (status == B_OK)
 		status = settings.Flatten(&fFile);
 	fFile.Unset();

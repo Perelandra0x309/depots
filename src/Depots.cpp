@@ -32,8 +32,11 @@ DepotsApplication::QuitRequested()
 void
 DepotsApplication::AboutRequested()
 {
-	BAlert *aboutAlert = new BAlert(B_TRANSLATE("About"),
-				B_TRANSLATE_COMMENT("Depots preferences by Brian Hill", "About box text"),
+	BString text(B_TRANSLATE_COMMENT("Depots preflet Copyright 2016 by Brian Hill", "About box line 1"));
+	text.Append("\n\n");
+	text.Append(B_TRANSLATE_COMMENT("This preflet will enable and disable depots "\
+								"used in the HaikuDepot application.", "About box line 2"));
+	BAlert *aboutAlert = new BAlert("About", text,
 				B_TRANSLATE_COMMENT("OK", "About box button label"));
 	aboutAlert->SetFlags(aboutAlert->Flags() | B_CLOSE_ON_ESCAPE);
 	aboutAlert->Go();
