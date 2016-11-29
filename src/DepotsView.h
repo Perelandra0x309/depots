@@ -55,6 +55,7 @@ private:
 	bool					fUsingMinimalButtons;//TODO remove when confident this works
 	void					_InitList();
 	void					_UpdatePkgmanList(bool updateStatusOnly=false);
+	void					_SaveList();
 	RepoRow*				_AddRepo(BString name, BString url, bool enabled);
 	void					_UpdateButtons();
 };

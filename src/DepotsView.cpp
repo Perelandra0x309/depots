@@ -233,10 +233,10 @@ DepotsView::MessageReceived(BMessage* msg)
 			while(rowItem)
 			{
 				fListView->RemoveRow(rowItem);
-				fSettings.RemoveRepository(rowItem->Url());
 				delete rowItem;
 				rowItem = (RepoRow*)fListView->CurrentSelection();
 			}
+			_SaveList();
 			break;
 		}
 		case LIST_SELECTION_CHANGED: {
@@ -334,7 +334,7 @@ DepotsView::AddManualRepository(BString url)
 	fListView->DeselectAll();
 	fListView->AddToSelection(newRepo);
 	_UpdateButtons();
-	fSettings.AddRepository(name, url);
+	_SaveList();
 }
 
 
@@ -405,10 +405,25 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 				index++;
 			url.RemoveChars(0, index);
 			_AddRepo(name, url, true);
-			if(!updateStatusOnly)
-				fSettings.AddRepository(name, url);
 		}
 	}
+	_SaveList();
+	
+}
+
+void
+DepotsView::_SaveList()
+{
+	BStringList nameList, urlList;
+	int32 index;
+	int32 listCount = fListView->CountRows();
+	for(index=0; index < listCount; index++)
+	{
+		RepoRow *repoItem = (RepoRow*)(fListView->RowAt(index));
+		nameList.Add(repoItem->Name());
+		urlList.Add(repoItem->Url());
+	}
+	fSettings.SetRepositories(nameList, urlList);
 }
 
 
@@ -429,10 +444,7 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 		{
 			// update name and enabled values
 			if(name.Compare(repoItem->Name()) != 0)
-			{
 				repoItem->SetName(name.String());
-				fSettings.AddRepository(name, url);
-			}
 			repoItem->SetEnabled(enabled);
 			addedRow = repoItem;
 		}

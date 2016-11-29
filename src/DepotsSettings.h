@@ -20,8 +20,7 @@ public:
 	BRect					GetFrame();
 	void					SetFrame(BRect frame);
 	status_t				GetRepositories(int32 &repoCount, BStringList &nameList, BStringList &urlList);
-	void					AddRepository(BString name, BString url);
-	void					RemoveRepository(const char *url);
+	void					SetRepositories(BStringList &nameList, BStringList &urlList);
 	
 private:
 	BPath					fFilePath;

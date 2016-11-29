@@ -6,6 +6,7 @@
 #include "DepotsSettings.h"
 
 #include <FindDirectory.h>
+#include <StringList.h>
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "DepotsSettings"
@@ -74,65 +75,19 @@ DepotsSettings::GetRepositories(int32 &repoCount, BStringList &nameList, BString
 
 
 void
-DepotsSettings::AddRepository(BString name, BString url)
+DepotsSettings::SetRepositories(BStringList &nameList, BStringList &urlList)
 {
 	BMessage settings(_ReadFromFile());
-	type_code type;
-	int32 count;
-	settings.GetInfo(key_name, &type, &count);
+	settings.RemoveName(key_name);
+	settings.RemoveName(key_url);
 	
-	bool exists = false;
-	int32 index;
-	BString foundName, foundUrl;
-	// determine if the repository already exists
-	for(index = 0; index < count; index++)
+	int32 index, count = nameList.CountStrings();
+	for(index=0; index < count; index++)
 	{
-		status_t result1 = settings.FindString(key_name, index, &foundName);
-		status_t result2 = settings.FindString(key_url, index, &foundUrl);
-		if(result2 == B_OK && foundUrl == url)
-		{
-			if(result1 == B_OK && foundName != name)
-			{
-				settings.ReplaceString(key_name, index, name);
-				_SaveToFile(settings);
-			}
-			exists = true;
-		}
+		settings.AddString(key_name, nameList.StringAt(index));
+		settings.AddString(key_url, urlList.StringAt(index));
 	}
-	if(!exists)
-	{
-		settings.AddString(key_name, name);
-		settings.AddString(key_url, url);
-		_SaveToFile(settings);
-	}
-}
-
-
-void
-DepotsSettings::RemoveRepository(const char *url)
-{
-	BMessage settings(_ReadFromFile());
-	type_code type;
-	int32 count;
-	settings.GetInfo(key_name, &type, &count);
-	
-	int32 index;
-	BString foundName, foundUrl;
-	// determine if the repository already exists
-	for(index = 0; index < count; index++)
-	{
-		status_t result1 = settings.FindString(key_name, index, &foundName);
-		status_t result2 = settings.FindString(key_url, index, &foundUrl);
-		if(result1 == B_OK && result2 == B_OK)
-		{
-			if(foundUrl.ICompare(url) == 0)
-			{
-				settings.RemoveData(key_name, index);
-				settings.RemoveData(key_url, index);
-				_SaveToFile(settings);
-			}
-		}
-	}
+	_SaveToFile(settings);
 }
 
 
