@@ -6,6 +6,7 @@
 #define TASK_WINDOW_H
 
 #include <Button.h>
+#include <Looper.h>
 #include <Path.h>
 #include <StatusBar.h>
 #include <String.h>
@@ -14,22 +15,34 @@
 #include <View.h>
 #include <Window.h>
 
+class TaskLooper : public BLooper {
+public:
+							TaskLooper(int32 what, BStringList params, BLooper *target);
+	virtual	bool			QuitRequested();
+	virtual void			MessageReceived(BMessage*);
+private:
+	BPath					fPkgmanTaskOut;
+	BStringList				fParams;
+	int32					fWhat;
+	BString					fOkLabel;
+	void					_DoTasks();
+	void					_UpdateStatus(BString text);
+	BLooper					*fMsgTarget;
+};
 
 class TaskWindow : public BWindow {
 public:
 							TaskWindow(BRect size, BLooper *looper, int32 what,
 											BStringList params);
+							~TaskWindow();
 	virtual void			MessageReceived(BMessage*);
 private:
-	BPath					fPkgmanTaskOut;
 	BView					*fView;
 	BStatusBar				*fStatus;
 	BButton					*fCancelButton;
-	BLooper					*msgLooper;
-	BStringList				fParams;
-	int32					fWhat;
 	BString					fOkLabel;
-	void					_DoTasks();
+	TaskLooper				*fTaskLooper;
+	BLooper					*msgLooper;
 };
 
 #endif

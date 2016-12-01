@@ -8,6 +8,7 @@
 #define key_frame "frame"
 #define key_name "repo_name"
 #define key_url "repo_url"
+#define key_text "text"
 
 //Messages
 enum {
@@ -20,6 +21,8 @@ enum {
 	ENABLE_BUTTON_PRESSED,
 	DISABLE_BUTTON_PRESSED,
 	DO_TASKS,
+	UPDATE_STATUS,
+	TASKS_COMPLETE,
 	UPDATE_LIST,
 	SHOW_ABOUT
 };

@@ -6,9 +6,9 @@
 #include <Catalog.h>
 #include <FindDirectory.h>
 #include <LayoutBuilder.h>
+#include <MessageQueue.h>
 #include <stdlib.h>
 #include <stdio.h>
-
 
 #include "TaskWindow.h"
 #include "constants.h"
@@ -17,13 +17,11 @@
 #define B_TRANSLATION_CONTEXT "TaskWindow"
 
 
-TaskWindow::TaskWindow(BRect size, BLooper *looper, int32 what, BStringList params)
-	:
-	BWindow(size, "TaskWindow", B_MODAL_WINDOW, B_NOT_RESIZABLE | 
-		B_ASYNCHRONOUS_CONTROLS |  B_AUTO_UPDATE_SIZE_LIMITS | B_CLOSE_ON_ESCAPE),
-	msgLooper(looper),
+TaskLooper::TaskLooper(int32 what, BStringList params, BLooper *target)
+	:BLooper(),
 	fWhat(what),
 	fParams(params),
+	fMsgTarget(target),
 	fOkLabel(B_TRANSLATE_COMMENT("OK", "Button label"))
 {
 	// Temp file location
@@ -32,51 +30,37 @@ TaskWindow::TaskWindow(BRect size, BLooper *looper, int32 what, BStringList para
 		fPkgmanTaskOut.Append("pkgman_task");
 	}//TODO alternatives?
 	
-	fView = new BView("view", B_WILL_DRAW | B_SUPPORTS_LAYOUT);
-	fView->SetExplicitMinSize(BSize(size.Width(), B_SIZE_UNSET));
-	fStatus = new BStatusBar("statusbar", "");
-	fStatus->SetMaxValue(fParams.CountStrings()+1);
-	fStatus->SetTo(0, " ");
-	fCancelButton = new BButton("Cancel", new BMessage(CANCEL_BUTTON_PRESSED));
-	
-	BLayoutBuilder::Group<>(fView, B_VERTICAL)
-		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
-		.Add(fStatus)
-		.AddGroup(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
-			.AddGlue()
-			.Add(fCancelButton);
-	BLayoutBuilder::Group<>(this).Add(fView);
-	
-	// Location on screen
-	MoveTo(size.left + 20, size.top + 20);
-	Show();
+	Run();
+}
+
+
+bool
+TaskLooper::QuitRequested()
+{	if(MessageQueue()->IsEmpty() && CountLockRequests() == 0)
+		return true;
+	else
+		return false;
 }
 
 
 void
-TaskWindow::MessageReceived(BMessage* msg)
+TaskLooper::MessageReceived(BMessage *msg)
 {
 	switch(msg->what)
 	{
-		case CANCEL_BUTTON_PRESSED: {
-			if(QuitRequested())
-				Quit();
-			break;
-		}
 		case DO_TASKS: {
 			_DoTasks();
+			fMsgTarget->PostMessage(TASKS_COMPLETE);
 			break;
 		}
-		default:
-			BWindow::MessageReceived(msg);
 	}
 }
 
+
 void
-TaskWindow::_DoTasks()
+TaskLooper::_DoTasks()
 {
-	fStatus->SetTo(0, " ");
-	UpdateIfNeeded();
+	
 	// Delete existing temp file
 	BEntry tmpEntry(fPkgmanTaskOut.Path());
 	if(tmpEntry.Exists())
@@ -96,8 +80,7 @@ TaskWindow::_DoTasks()
 				statusText.ReplaceFirst("%total%", countStr);
 				statusText.Append(" ");
 				statusText.Append(fParams.StringAt(index));
-				fStatus->Update(1, statusText);
-				UpdateIfNeeded();
+				_UpdateStatus(statusText);
 				BString command("yes | pkgman drop \"");
 				command.Append(fParams.StringAt(index));
 				command.Append("\" >> ").Append(fPkgmanTaskOut.Path());
@@ -121,8 +104,7 @@ TaskWindow::_DoTasks()
 				statusText.ReplaceFirst("%total%", countStr);
 				statusText.Append(" ");
 				statusText.Append(fParams.StringAt(index));
-				fStatus->Update(1, statusText);
-				UpdateIfNeeded();
+				_UpdateStatus(statusText);
 				BString command("yes | pkgman add \"");
 				command.Append(fParams.StringAt(index));
 				command.Append("\" >> ").Append(fPkgmanTaskOut.Path());
@@ -139,7 +121,7 @@ TaskWindow::_DoTasks()
 		}
 	}
 	if(errorCount==0)
-		fStatus->Update(1, "Completed tasks");
+		_UpdateStatus("Completed tasks");
 	else
 	{
 		BString finalText;
@@ -150,12 +132,92 @@ TaskWindow::_DoTasks()
 		BString total;
 		total<<errorCount;
 		finalText.ReplaceFirst("%total%", total);
-		fStatus->Update(1, finalText);
+		_UpdateStatus(finalText);
 	}
-	fCancelButton->SetLabel(fOkLabel);
-	UpdateIfNeeded();
+}
+
+void
+TaskLooper::_UpdateStatus(BString text)
+{
+	// send message to window
+	BMessage msg(UPDATE_STATUS);
+	msg.AddString(key_text, text);
+	fMsgTarget->PostMessage(&msg);
+}
+
+
+TaskWindow::TaskWindow(BRect size, BLooper *looper, int32 what, BStringList params)
+	:
+	BWindow(size, "TaskWindow", B_MODAL_WINDOW, B_NOT_RESIZABLE | 
+		B_ASYNCHRONOUS_CONTROLS |  B_AUTO_UPDATE_SIZE_LIMITS | B_CLOSE_ON_ESCAPE),
+	msgLooper(looper),
+	fOkLabel(B_TRANSLATE_COMMENT("OK", "Button label"))
+{
+	fTaskLooper = new TaskLooper(what, params, this);
 	
-	msgLooper->PostMessage(UPDATE_LIST);
-//	if(errorCount==0)
-		Quit();
+	fView = new BView("view", B_WILL_DRAW | B_SUPPORTS_LAYOUT);
+	fView->SetExplicitMinSize(BSize(size.Width(), B_SIZE_UNSET));
+	fStatus = new BStatusBar("statusbar", "");
+	fStatus->SetMaxValue(params.CountStrings()+1);
+	fStatus->SetTo(0, " ");
+	fCancelButton = new BButton("Cancel", new BMessage(CANCEL_BUTTON_PRESSED));
+	
+	BLayoutBuilder::Group<>(fView, B_VERTICAL)
+		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
+		.Add(fStatus)
+		.AddGroup(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
+			.AddGlue()
+			.Add(fCancelButton);
+	BLayoutBuilder::Group<>(this).Add(fView);
+	
+	// Location on screen
+	MoveTo(size.left + 20, size.top + 20);
+	Show();
+}
+
+
+TaskWindow::~TaskWindow()
+{
+	fTaskLooper->Lock();
+	fTaskLooper->Quit();
+}
+
+
+void
+TaskWindow::MessageReceived(BMessage* msg)
+{
+	switch(msg->what)
+	{
+		case CANCEL_BUTTON_PRESSED: {
+			if(QuitRequested())
+				Quit();
+			break;
+		}
+		case DO_TASKS: {
+			fStatus->SetTo(0, " ");
+			UpdateIfNeeded();
+			fTaskLooper->PostMessage(DO_TASKS);
+			break;
+		}
+		case UPDATE_STATUS: {
+			BString statusText;
+			status_t status = msg->FindString(key_text, &statusText);
+			if(status == B_OK)
+			{
+				fStatus->Update(1, statusText);
+				UpdateIfNeeded();
+			}
+			break;
+		}
+		case TASKS_COMPLETE: {
+			fCancelButton->SetLabel(fOkLabel);
+			UpdateIfNeeded();
+			msgLooper->PostMessage(UPDATE_LIST);
+			//	if(errorCount==0)
+		//	Quit(); TODO use this?
+			break;
+		}
+		default:
+			BWindow::MessageReceived(msg);
+	}
 }
