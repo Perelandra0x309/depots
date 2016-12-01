@@ -6,6 +6,7 @@
 #define TASK_WINDOW_H
 
 #include <Button.h>
+#include <Path.h>
 #include <StatusBar.h>
 #include <String.h>
 #include <StringList.h>
@@ -20,9 +21,9 @@ public:
 											BStringList params);
 	virtual void			MessageReceived(BMessage*);
 private:
+	BPath					fPkgmanTaskOut;
 	BView					*fView;
 	BStatusBar				*fStatus;
-//	BStringView				*fText;
 	BButton					*fCancelButton;
 	BLooper					*msgLooper;
 	BStringList				fParams;

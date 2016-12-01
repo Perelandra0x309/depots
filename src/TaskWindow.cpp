@@ -2,14 +2,10 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
-//#include <Application.h>
 #include <Alert.h>
 #include <Catalog.h>
-//#include <File.h>
+#include <FindDirectory.h>
 #include <LayoutBuilder.h>
-//#include <Screen.h>
-//#include <Size.h>
-//#include <StringList.h>
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -30,18 +26,22 @@ TaskWindow::TaskWindow(BRect size, BLooper *looper, int32 what, BStringList para
 	fParams(params),
 	fOkLabel(B_TRANSLATE_COMMENT("OK", "Button label"))
 {
+	// Temp file location
+	status_t status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanTaskOut);
+	if (status == B_OK) {
+		fPkgmanTaskOut.Append("pkgman_task");
+	}//TODO alternatives?
+	
 	fView = new BView("view", B_WILL_DRAW | B_SUPPORTS_LAYOUT);
 	fView->SetExplicitMinSize(BSize(size.Width(), B_SIZE_UNSET));
 	fStatus = new BStatusBar("statusbar", "");
 	fStatus->SetMaxValue(fParams.CountStrings()+1);
 	fStatus->SetTo(0, " ");
-//	fText = new BStringView("statustext", "Test");
 	fCancelButton = new BButton("Cancel", new BMessage(CANCEL_BUTTON_PRESSED));
 	
 	BLayoutBuilder::Group<>(fView, B_VERTICAL)
 		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
 		.Add(fStatus)
-//		.Add(fText)
 		.AddGroup(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
 			.AddGlue()
 			.Add(fCancelButton);
@@ -75,10 +75,15 @@ TaskWindow::MessageReceived(BMessage* msg)
 void
 TaskWindow::_DoTasks()
 {
-	int32 count = fParams.CountStrings();
-	int32 index, errorCount=0;
 	fStatus->SetTo(0, " ");
 	UpdateIfNeeded();
+	// Delete existing temp file
+	BEntry tmpEntry(fPkgmanTaskOut.Path());
+	if(tmpEntry.Exists())
+		tmpEntry.Remove();
+	
+	int32 count = fParams.CountStrings();
+	int32 index, errorCount=0;
 	for(index=0; index < count; index++)
 	{
 		switch(fWhat){
@@ -91,19 +96,18 @@ TaskWindow::_DoTasks()
 				statusText.ReplaceFirst("%total%", countStr);
 				statusText.Append(" ");
 				statusText.Append(fParams.StringAt(index));
-			//	Lock();
 				fStatus->Update(1, statusText);
 				UpdateIfNeeded();
-			//	Unlock();
 				BString command("yes | pkgman drop \"");
 				command.Append(fParams.StringAt(index));
-				command.Append("\" >> /boot/home/pkgout");
+				command.Append("\" >> ").Append(fPkgmanTaskOut.Path());
+				command.Append("; echo '\n' >> ").Append(fPkgmanTaskOut.Path());
 				int sysResult = system(command.String());
 				if(sysResult)
 				{
 					BString errorText(B_TRANSLATE("There was an error disabling the depot"));
 					errorText.Append(" ").Append(fParams.StringAt(index));
-					(new BAlert("error", errorText, fOkLabel))->Go();
+					(new BAlert("error", errorText, fOkLabel))->Go(NULL);//TODO option to display output in temp file?
 					errorCount++;
 				}
 				break;
@@ -117,13 +121,11 @@ TaskWindow::_DoTasks()
 				statusText.ReplaceFirst("%total%", countStr);
 				statusText.Append(" ");
 				statusText.Append(fParams.StringAt(index));
-			//	Lock();
 				fStatus->Update(1, statusText);
 				UpdateIfNeeded();
-			//	Unlock();
 				BString command("yes | pkgman add \"");
 				command.Append(fParams.StringAt(index));
-				command.Append("\" >> /boot/home/pkgout");
+				command.Append("\" >> ").Append(fPkgmanTaskOut.Path());
 				int sysResult = system(command.String());
 				if(sysResult)
 				{
@@ -136,7 +138,6 @@ TaskWindow::_DoTasks()
 			}
 		}
 	}
-//	Lock();
 	if(errorCount==0)
 		fStatus->Update(1, "Completed tasks");
 	else
@@ -153,7 +154,6 @@ TaskWindow::_DoTasks()
 	}
 	fCancelButton->SetLabel(fOkLabel);
 	UpdateIfNeeded();
-//	Unlock();
 	
 	msgLooper->PostMessage(UPDATE_LIST);
 //	if(errorCount==0)

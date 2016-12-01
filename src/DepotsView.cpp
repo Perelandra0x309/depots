@@ -7,6 +7,7 @@
 #include <Catalog.h>
 #include <ColumnTypes.h>
 #include <File.h>
+#include <FindDirectory.h>
 #include <Layout.h>
 #include <LayoutBuilder.h>
 #include <SeparatorView.h>
@@ -71,6 +72,12 @@ DepotsView::DepotsView()
 	fLabelDisableAll(B_TRANSLATE_COMMENT("Disable All", "Button label")),
 	fUsingMinimalButtons(true)
 {
+	// Temp file location
+	status_t status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanListOut);
+	if (status == B_OK) {
+		fPkgmanListOut.Append("pkgman_list");
+	}//TODO alternatives?
+	
 	fListView = new BColumnListView("list", B_NAVIGABLE, B_PLAIN_BORDER);
 	fListView->SetSelectionMessage(new BMessage(LIST_SELECTION_CHANGED));
 	float col0width = be_plain_font->StringWidth(fTitleEnabled) + 15;
@@ -375,9 +382,11 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 	}
 	
 	// Get list of current enabled repositories from pkgman
-	int sysResult = system("pkgman list > /boot/home/pkglist");//TODO where to save temp file?  Delete after.
+	BString command("pkgman list > ");
+	command.Append(fPkgmanListOut.Path());
+	int sysResult = system(command.String());
 //	printf("result=%i", sysResult);
-	BFile listFile("/boot/home/pkglist", B_READ_ONLY);
+	BFile listFile(fPkgmanListOut.Path(), B_READ_ONLY);
 	if(listFile.InitCheck()==B_OK)
 	{
 		off_t size;
@@ -406,9 +415,11 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 			url.RemoveChars(0, index);
 			_AddRepo(name, url, true);
 		}
+		_SaveList();
+		listFile.Unset();
+		BEntry tmpEntry(fPkgmanListOut.Path());
+		tmpEntry.Remove();
 	}
-	_SaveList();
-	
 }
 
 void

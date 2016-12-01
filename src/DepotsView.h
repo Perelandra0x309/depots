@@ -46,6 +46,7 @@ public:
 	status_t				Clean();
 	void					AddManualRepository(BString url);
 private:
+	BPath					fPkgmanListOut;
 	DepotsSettings			fSettings;
 	BColumnListView			*fListView;
 	BButton					*fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
