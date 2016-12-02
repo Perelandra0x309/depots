@@ -22,7 +22,8 @@ TaskLooper::TaskLooper(int32 what, BStringList params, BLooper *target)
 	fWhat(what),
 	fParams(params),
 	fMsgTarget(target),
-	fOkLabel(B_TRANSLATE_COMMENT("OK", "Button label"))
+	fOkLabel(B_TRANSLATE_COMMENT("OK", "Button label")),
+	fQuitWasRequested(false)
 {
 	// Temp file location
 	status_t status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanTaskOut);
@@ -36,7 +37,9 @@ TaskLooper::TaskLooper(int32 what, BStringList params, BLooper *target)
 
 bool
 TaskLooper::QuitRequested()
-{	if(MessageQueue()->IsEmpty() && CountLockRequests() == 0)
+{	
+	fQuitWasRequested = true;
+	if(MessageQueue()->IsEmpty() && CountLockRequests() == 0)
 		return true;
 	else
 		return false;
@@ -50,7 +53,6 @@ TaskLooper::MessageReceived(BMessage *msg)
 	{
 		case DO_TASKS: {
 			_DoTasks();
-			fMsgTarget->PostMessage(TASKS_COMPLETE);
 			break;
 		}
 	}
@@ -70,9 +72,16 @@ TaskLooper::_DoTasks()
 	int32 index, errorCount=0;
 	for(index=0; index < count; index++)
 	{
+		// check if the cancel button was pressed
+		if(fQuitWasRequested)
+		{
+			fMsgTarget->PostMessage(TASKS_CANCELED);
+			return;
+		}
+		
 		switch(fWhat){
 			case DISABLE_BUTTON_PRESSED: {
-				BString statusText(B_TRANSLATE("Task (%number% of %total%): Disabling depot"));
+				BString statusText(B_TRANSLATE_COMMENT("Task (%number% of %total%): Disabling depot", "Do not translate %number% and %total%"));
 				BString indexStr, countStr;
 				indexStr<<index+1;
 				countStr<<count;
@@ -96,7 +105,7 @@ TaskLooper::_DoTasks()
 				break;
 			}
 			case ENABLE_BUTTON_PRESSED: {
-				BString statusText(B_TRANSLATE("Task (%number% of %total%): Enabling depot"));
+				BString statusText(B_TRANSLATE_COMMENT("Task (%number% of %total%): Enabling depot", "Do not translate %number% and %total%"));
 				BString indexStr, countStr;
 				indexStr<<index+1;
 				countStr<<count;
@@ -121,7 +130,10 @@ TaskLooper::_DoTasks()
 		}
 	}
 	if(errorCount==0)
+	{
 		_UpdateStatus("Completed tasks");
+		fMsgTarget->PostMessage(TASKS_COMPLETE);
+	}
 	else
 	{
 		BString finalText;
@@ -133,7 +145,9 @@ TaskLooper::_DoTasks()
 		total<<errorCount;
 		finalText.ReplaceFirst("%total%", total);
 		_UpdateStatus(finalText);
+		fMsgTarget->PostMessage(TASKS_COMPLETE_WITH_ERRORS);
 	}
+	
 }
 
 void
@@ -188,14 +202,11 @@ TaskWindow::MessageReceived(BMessage* msg)
 {
 	switch(msg->what)
 	{
-		case CANCEL_BUTTON_PRESSED: {
-			if(QuitRequested())
-				Quit();
-			break;
-		}
 		case DO_TASKS: {
+			Lock();
 			fStatus->SetTo(0, " ");
 			UpdateIfNeeded();
+			Unlock();
 			fTaskLooper->PostMessage(DO_TASKS);
 			break;
 		}
@@ -204,17 +215,50 @@ TaskWindow::MessageReceived(BMessage* msg)
 			status_t status = msg->FindString(key_text, &statusText);
 			if(status == B_OK)
 			{
+				Lock();
 				fStatus->Update(1, statusText);
 				UpdateIfNeeded();
+				Unlock();
 			}
 			break;
 		}
 		case TASKS_COMPLETE: {
+			msgLooper->PostMessage(UPDATE_LIST);
+			Quit();
+			break;
+		}
+		case TASKS_COMPLETE_WITH_ERRORS: {
+			Lock();
 			fCancelButton->SetLabel(fOkLabel);
 			UpdateIfNeeded();
+			Unlock();
 			msgLooper->PostMessage(UPDATE_LIST);
-			//	if(errorCount==0)
-		//	Quit(); TODO use this?
+			break;
+		}
+		case CANCEL_BUTTON_PRESSED: {
+			if(fTaskLooper->QuitRequested())
+			{
+				msgLooper->PostMessage(UPDATE_LIST);
+				Quit();
+			}
+			else
+			{
+				Lock();
+				fStatus->SetTo(fStatus->MaxValue(), B_TRANSLATE_COMMENT("Canceling tasks, please wait" B_UTF8_ELLIPSIS, "Status bar text"));
+				fCancelButton->SetEnabled(false);
+				UpdateIfNeeded();
+				Unlock();
+			}
+			break;
+		}
+		case TASKS_CANCELED: {
+			Lock();
+			fStatus->SetTo(fStatus->MaxValue(), B_TRANSLATE_COMMENT("Successfully canceled remaining tasks", "Status bar text"));
+			fCancelButton->SetLabel(fOkLabel);
+			fCancelButton->SetEnabled(true);
+			UpdateIfNeeded();
+			Unlock();
+			msgLooper->PostMessage(UPDATE_LIST);
 			break;
 		}
 		default:

@@ -25,6 +25,7 @@ private:
 	BStringList				fParams;
 	int32					fWhat;
 	BString					fOkLabel;
+	bool					fQuitWasRequested;
 	void					_DoTasks();
 	void					_UpdateStatus(BString text);
 	BLooper					*fMsgTarget;
