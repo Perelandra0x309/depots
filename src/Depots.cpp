@@ -4,6 +4,9 @@
  */
 #include <Alert.h>
 #include <Catalog.h>
+#include <Cursor.h>
+#include <LayoutBuilder.h>
+#include <Roster.h>
 
 #include "constants.h"
 #include "Depots.h"
@@ -12,6 +15,60 @@
 #define B_TRANSLATION_CONTEXT "DepotsApplication"
 
 const char* kAppSignature = "application/x-vnd.BH-Depots";
+
+
+URLView::URLView(const char *name, const char *url)
+	:
+	BStringView(name, url),
+	fUrl(url),
+	fMouseOver(false)
+{ }
+
+
+void
+URLView::MouseMoved(BPoint where, uint32 code, const BMessage *dragMessage)
+{
+	switch(code)
+	{
+		case B_ENTERED_VIEW: {
+			BCursor cursor(B_CURSOR_ID_FOLLOW_LINK);
+			be_app->SetCursor(&cursor);
+			fMouseOver = true;
+			Invalidate();
+			break;
+		}
+		case B_EXITED_VIEW: {
+			BCursor cursor(B_CURSOR_ID_SYSTEM_DEFAULT);
+			be_app->SetCursor(&cursor);
+			fMouseOver = false;
+			Invalidate();
+			break;
+		}
+	}
+}
+
+
+void
+URLView::Draw(BRect bounds)
+{
+	SetHighColor(ui_color(fMouseOver ? B_LINK_HOVER_COLOR : B_LINK_TEXT_COLOR));
+	//TODO for some reason underlining is not working
+	BFont font(be_plain_font);
+	font.SetFace(B_UNDERSCORE_FACE);
+	SetFont(&font, B_FONT_FACE);
+	
+	BStringView::Draw(bounds);
+}
+
+
+void
+URLView::MouseDown(BPoint point)
+{
+	BRoster roster;
+	BMessage msg(B_REFS_RECEIVED);
+	msg.AddString("url", fUrl.String());
+	roster.Launch("text/html", &msg);
+}
 
 
 DepotsApplication::DepotsApplication()
@@ -32,6 +89,16 @@ DepotsApplication::AboutRequested()
 								"used in the HaikuDepot application.", "About box line 2"));
 	BAlert *aboutAlert = new BAlert("About", text, kOKLabel);
 	aboutAlert->SetFlags(aboutAlert->Flags() | B_CLOSE_ON_ESCAPE);
+	// Add clickable URL
+	BTextView *textView = aboutAlert->TextView();
+	BLayoutBuilder::Group<>(textView, B_VERTICAL, 0)
+		.AddGlue()
+		.Add(new URLView("url", kWebsiteUrl))
+		.AddStrut(3);
+	BSize viewSize=textView->MinSize();
+	viewSize.height+=75;
+	textView->SetExplicitMinSize(viewSize);
+	
 	aboutAlert->Go();
 }
 

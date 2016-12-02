@@ -6,15 +6,30 @@
 #define DEPOTS_H
 
 #include <Application.h>
+#include <Point.h>
+#include <Rect.h>
+#include <StringView.h>
 
 #include "DepotsWindow.h"
 
+
+class URLView : public BStringView {
+public:
+							URLView(const char *name, const char *url);
+	virtual void			MouseMoved(BPoint where, uint32 code, const BMessage *dragMessage);
+	virtual void			MouseDown(BPoint point);
+	virtual void			Draw(BRect bounds);
+private:
+	BString					fUrl;
+	bool					fMouseOver;
+};
+
 class DepotsApplication : public BApplication {
 public:
-						DepotsApplication();
-			void		AboutRequested();
+							DepotsApplication();
+	virtual void			AboutRequested();
 private:
-	DepotsWindow		*fWindow;
+	DepotsWindow			*fWindow;
 };
 
 #endif

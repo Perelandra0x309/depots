@@ -15,6 +15,7 @@
 
 const BString kOKLabel = B_TRANSLATE_COMMENT("OK", "Button label");
 const BString kCancelLabel = B_TRANSLATE_COMMENT("Cancel", "Button label");
+const BString kWebsiteUrl = "http://perelandra0x309.github.io/depots";
 
 #define key_frame "frame"
 #define key_name "repo_name"
