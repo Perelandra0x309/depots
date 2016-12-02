@@ -69,8 +69,7 @@ DepotsView::DepotsView()
 	fLabelEnable(B_TRANSLATE_COMMENT("Enable", "Button label")),
 	fLabelEnableAll(B_TRANSLATE_COMMENT("Enable All", "Button label")),
 	fLabelDisable(B_TRANSLATE_COMMENT("Disable", "Button label")),
-	fLabelDisableAll(B_TRANSLATE_COMMENT("Disable All", "Button label")),
-	fUsingMinimalButtons(true)
+	fLabelDisableAll(B_TRANSLATE_COMMENT("Disable All", "Button label"))
 {
 	// Temp file location
 	status_t status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanListOut);
@@ -95,8 +94,7 @@ DepotsView::DepotsView()
 	fEnableButton->SetEnabled(false);
 	fDisableButton->SetEnabled(false);
 	
-
-if(fUsingMinimalButtons) {
+#if USE_MINIMAL_BUTTONS
 	// ---Minimal buttons option---
 	BView *button1View = new BView("button1View", B_WILL_DRAW);
 	int buttonSize = 25;
@@ -121,7 +119,7 @@ if(fUsingMinimalButtons) {
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
 		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
 		.AddGroup(B_HORIZONTAL, 0, 0.0)
-			.Add(new BStringView("instruction", B_TRANSLATE("Select depots to use in HaikuDepot:")), 0.0)
+			.Add(new BStringView("instruction", B_TRANSLATE_COMMENT("Select depots to use in HaikuDepot:", "Label text")), 0.0)
 			.AddGlue()
 			.Add(button3View, 0.0)
 		.End()
@@ -187,8 +185,7 @@ if(fUsingMinimalButtons) {
 		*/
 		
 	// ---End minimal buttons section---
-}
-else {
+#else
 	
 		// ---Standard buttons option---
 	fAddButton = new BButton(B_TRANSLATE_COMMENT("Add" B_UTF8_ELLIPSIS, "Button label"),
@@ -198,7 +195,7 @@ else {
 	
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
-		.Add(new BStringView("instruction", B_TRANSLATE("Select depots to use in HaikuDepot:")))
+		.Add(new BStringView("instruction", B_TRANSLATE_COMMENT("Select depots to use in HaikuDepot:", "Label text")))
 		.Add(fListView)
 		.AddGroup(B_HORIZONTAL)
 			.Add(fAddButton)
@@ -208,7 +205,7 @@ else {
 			.Add(fDisableButton)
 		.End();
 	// -- End standard buttons section
-}
+#endif //USE_MINIMAL_BUTTONS
 
 }
 
@@ -267,7 +264,7 @@ DepotsView::MessageReceived(BMessage* msg)
 					{
 						(new BAlert("duplicate", B_TRANSLATE_COMMENT("You can only enable one URL for "
 										"each depot.  Please change your selections.", "Error message"),
-										B_TRANSLATE_COMMENT("OK", "Alert button label"), NULL, NULL,
+										kOKLabel, NULL, NULL,
 										B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
 						paramsOK = false;
 						break;
@@ -332,11 +329,11 @@ DepotsView::AddManualRepository(BString url)
 		RepoRow *repoItem = (RepoRow*)(fListView->RowAt(index));
 		if(url.ICompare(repoItem->Url()) == 0)
 		{
-			(new BAlert("duplicate", B_TRANSLATE("Depot already exists."), B_TRANSLATE("OK")))->Go();
+			(new BAlert("duplicate", B_TRANSLATE_COMMENT("Depot already exists.", "Error message"), kOKLabel))->Go();
 			return; 
 		}
 	}
-	BString name(B_TRANSLATE("Unknown"));
+	BString name(B_TRANSLATE_COMMENT("Unknown", "Unknown depot name"));
 	RepoRow *newRepo = _AddRepo(name, url, false);
 	fListView->DeselectAll();
 	fListView->AddToSelection(newRepo);
@@ -502,15 +499,17 @@ DepotsView::_UpdateButtons()
 		// Change button labels depending on which rows are selected
 		if(selectedCount>1)
 		{
-			if(!fUsingMinimalButtons)
-				fRemoveButton->SetLabel(fLabelRemoveAll);
+#if !USE_MINIMAL_BUTTONS
+			fRemoveButton->SetLabel(fLabelRemoveAll);
+#endif
 			fEnableButton->SetLabel(fLabelEnableAll);
 			fDisableButton->SetLabel(fLabelDisableAll);
 		}
 		else
 		{
-			if(!fUsingMinimalButtons)
-				fRemoveButton->SetLabel(fLabelRemove);
+#if !USE_MINIMAL_BUTTONS
+			fRemoveButton->SetLabel(fLabelRemove);
+#endif
 			fEnableButton->SetLabel(fLabelEnable);
 			fDisableButton->SetLabel(fLabelDisable);
 		}
@@ -532,8 +531,9 @@ DepotsView::_UpdateButtons()
 	// No selected rows
 	else
 	{
-		if(!fUsingMinimalButtons)
-			fRemoveButton->SetLabel(fLabelRemove);
+#if !USE_MINIMAL_BUTTONS
+		fRemoveButton->SetLabel(fLabelRemove);
+#endif
 		fEnableButton->SetLabel(fLabelEnable);
 		fDisableButton->SetLabel(fLabelDisable);
 		fEnableButton->SetEnabled(false);

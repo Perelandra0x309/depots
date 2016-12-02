@@ -5,6 +5,17 @@
 #ifndef DEPOTS_CONSTANTS_H
 #define DEPOTS_CONSTANTS_H
 
+#include <Catalog.h>
+#include <String.h>
+
+#undef B_TRANSLATION_CONTEXT
+#define B_TRANSLATION_CONTEXT "Constants"
+
+#define USE_MINIMAL_BUTTONS 1
+
+const BString kOKLabel = B_TRANSLATE_COMMENT("OK", "Button label");
+const BString kCancelLabel = B_TRANSLATE_COMMENT("Cancel", "Button label");
+
 #define key_frame "frame"
 #define key_name "repo_name"
 #define key_url "repo_url"

@@ -24,7 +24,6 @@ private:
 	BPath					fPkgmanTaskOut;
 	BStringList				fParams;
 	int32					fWhat;
-	BString					fOkLabel;
 	bool					fQuitWasRequested;
 	void					_DoTasks();
 	void					_UpdateStatus(BString text);
@@ -41,7 +40,6 @@ private:
 	BView					*fView;
 	BStatusBar				*fStatus;
 	BButton					*fCancelButton;
-	BString					fOkLabel;
 	TaskLooper				*fTaskLooper;
 	BLooper					*msgLooper;
 };

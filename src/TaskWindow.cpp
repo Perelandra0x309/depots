@@ -22,7 +22,6 @@ TaskLooper::TaskLooper(int32 what, BStringList params, BLooper *target)
 	fWhat(what),
 	fParams(params),
 	fMsgTarget(target),
-	fOkLabel(B_TRANSLATE_COMMENT("OK", "Button label")),
 	fQuitWasRequested(false)
 {
 	// Temp file location
@@ -97,9 +96,9 @@ TaskLooper::_DoTasks()
 				int sysResult = system(command.String());
 				if(sysResult)
 				{
-					BString errorText(B_TRANSLATE("There was an error disabling the depot"));
+					BString errorText(B_TRANSLATE_COMMENT("There was an error disabling the depot", "Error message"));
 					errorText.Append(" ").Append(fParams.StringAt(index));
-					(new BAlert("error", errorText, fOkLabel))->Go(NULL);//TODO option to display output in temp file?
+					(new BAlert("error", errorText, kOKLabel))->Go(NULL);//TODO option to display output in temp file?
 					errorCount++;
 				}
 				break;
@@ -120,9 +119,9 @@ TaskLooper::_DoTasks()
 				int sysResult = system(command.String());
 				if(sysResult)
 				{
-					BString errorText(B_TRANSLATE("There was an error enabling the depot"));
+					BString errorText(B_TRANSLATE_COMMENT("There was an error enabling the depot", "Error message"));
 					errorText.Append(" ").Append(fParams.StringAt(index));
-					(new BAlert("error", errorText, fOkLabel))->Go(NULL);
+					(new BAlert("error", errorText, kOKLabel))->Go(NULL);
 					errorCount++;
 				}
 				break;
@@ -131,16 +130,16 @@ TaskLooper::_DoTasks()
 	}
 	if(errorCount==0)
 	{
-		_UpdateStatus("Completed tasks");
+		_UpdateStatus(B_TRANSLATE_COMMENT("Completed tasks", "Status message"));
 		fMsgTarget->PostMessage(TASKS_COMPLETE);
 	}
 	else
 	{
 		BString finalText;
 		if(errorCount==1)
-			finalText.SetTo(B_TRANSLATE("Completed tasks with 1 error"));
+			finalText.SetTo(B_TRANSLATE_COMMENT("Completed tasks with 1 error", "Status message"));
 		else
-			finalText.SetTo(B_TRANSLATE("Completed tasks with %total% errors"));
+			finalText.SetTo(B_TRANSLATE_COMMENT("Completed tasks with %total% errors", "Status message, do not translate %total%"));
 		BString total;
 		total<<errorCount;
 		finalText.ReplaceFirst("%total%", total);
@@ -164,8 +163,7 @@ TaskWindow::TaskWindow(BRect size, BLooper *looper, int32 what, BStringList para
 	:
 	BWindow(size, "TaskWindow", B_MODAL_WINDOW, B_NOT_RESIZABLE | 
 		B_ASYNCHRONOUS_CONTROLS |  B_AUTO_UPDATE_SIZE_LIMITS | B_CLOSE_ON_ESCAPE),
-	msgLooper(looper),
-	fOkLabel(B_TRANSLATE_COMMENT("OK", "Button label"))
+	msgLooper(looper)
 {
 	fTaskLooper = new TaskLooper(what, params, this);
 	
@@ -174,7 +172,7 @@ TaskWindow::TaskWindow(BRect size, BLooper *looper, int32 what, BStringList para
 	fStatus = new BStatusBar("statusbar", "");
 	fStatus->SetMaxValue(params.CountStrings()+1);
 	fStatus->SetTo(0, " ");
-	fCancelButton = new BButton("Cancel", new BMessage(CANCEL_BUTTON_PRESSED));
+	fCancelButton = new BButton(kCancelLabel, new BMessage(CANCEL_BUTTON_PRESSED));
 	
 	BLayoutBuilder::Group<>(fView, B_VERTICAL)
 		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
@@ -229,7 +227,7 @@ TaskWindow::MessageReceived(BMessage* msg)
 		}
 		case TASKS_COMPLETE_WITH_ERRORS: {
 			Lock();
-			fCancelButton->SetLabel(fOkLabel);
+			fCancelButton->SetLabel(kOKLabel);
 			UpdateIfNeeded();
 			Unlock();
 			msgLooper->PostMessage(UPDATE_LIST);
@@ -254,7 +252,7 @@ TaskWindow::MessageReceived(BMessage* msg)
 		case TASKS_CANCELED: {
 			Lock();
 			fStatus->SetTo(fStatus->MaxValue(), B_TRANSLATE_COMMENT("Successfully canceled remaining tasks", "Status bar text"));
-			fCancelButton->SetLabel(fOkLabel);
+			fCancelButton->SetLabel(kOKLabel);
 			fCancelButton->SetEnabled(true);
 			UpdateIfNeeded();
 			Unlock();
