@@ -10,8 +10,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "TaskWindow.h"
 #include "constants.h"
+#include "ErrorAlert.h"
+#include "TaskWindow.h"
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "TaskWindow"
@@ -67,8 +68,8 @@ TaskLooper::_DoTasks()
 	if(tmpEntry.Exists())
 		tmpEntry.Remove();
 	
-	int32 count = fParams.CountStrings();
-	int32 index, errorCount=0;
+	BStringList erroredParams;
+	int32 index, count = fParams.CountStrings();
 	for(index=0; index < count; index++)
 	{
 		// check if the cancel button was pressed
@@ -80,62 +81,63 @@ TaskLooper::_DoTasks()
 		
 		switch(fWhat){
 			case DISABLE_BUTTON_PRESSED: {
+				BString nameParam(fParams.StringAt(index));
+				// Set status bar text
 				BString statusText(B_TRANSLATE_COMMENT("Task (%number% of %total%): Disabling depot", "Do not translate %number% and %total%"));
 				BString indexStr, countStr;
 				indexStr<<index+1;
 				countStr<<count;
 				statusText.ReplaceFirst("%number%", indexStr);
 				statusText.ReplaceFirst("%total%", countStr);
-				statusText.Append(" ");
-				statusText.Append(fParams.StringAt(index));
+				statusText.Append(" ").Append(nameParam);
 				_UpdateStatus(statusText);
+				// Create command
 				BString command("yes | pkgman drop \"");
-				command.Append(fParams.StringAt(index));
-				command.Append("\" >> ").Append(fPkgmanTaskOut.Path());
-				command.Append("; echo '\n' >> ").Append(fPkgmanTaskOut.Path());
+				command.Append(nameParam).Append("\" >> ").Append(fPkgmanTaskOut.Path());
 				int sysResult = system(command.String());
 				if(sysResult)
 				{
-					BString errorText(B_TRANSLATE_COMMENT("There was an error disabling the depot", "Error message"));
-					errorText.Append(" ").Append(fParams.StringAt(index));
-					(new BAlert("error", errorText, kOKLabel))->Go(NULL);//TODO option to display output in temp file?
-					errorCount++;
+					//TODO not getting error message in file?
+					erroredParams.Add(nameParam);
 				}
+				command.SetTo("echo '\n' >> ").Append(fPkgmanTaskOut.Path());
+				system(command.String());
 				break;
 			}
 			case ENABLE_BUTTON_PRESSED: {
+				BString urlParam(fParams.StringAt(index));
+				// Set status bar text
 				BString statusText(B_TRANSLATE_COMMENT("Task (%number% of %total%): Enabling depot", "Do not translate %number% and %total%"));
 				BString indexStr, countStr;
 				indexStr<<index+1;
 				countStr<<count;
 				statusText.ReplaceFirst("%number%", indexStr);
 				statusText.ReplaceFirst("%total%", countStr);
-				statusText.Append(" ");
-				statusText.Append(fParams.StringAt(index));
+				statusText.Append(" ").Append(urlParam);
 				_UpdateStatus(statusText);
+				// Create command
 				BString command("yes | pkgman add \"");
-				command.Append(fParams.StringAt(index));
-				command.Append("\" >> ").Append(fPkgmanTaskOut.Path());
+				command.Append(urlParam).Append("\" >> ").Append(fPkgmanTaskOut.Path());
 				int sysResult = system(command.String());
 				if(sysResult)
 				{
-					BString errorText(B_TRANSLATE_COMMENT("There was an error enabling the depot", "Error message"));
-					errorText.Append(" ").Append(fParams.StringAt(index));
-					(new BAlert("error", errorText, kOKLabel))->Go(NULL);
-					errorCount++;
+					erroredParams.Add(urlParam);
 				}
+				command.SetTo("echo '\n' >> ").Append(fPkgmanTaskOut.Path());
+				system(command.String());
 				break;
 			}
 		}
 	}
+	int32 errorCount = erroredParams.CountStrings();
 	if(errorCount==0)
 	{
-		_UpdateStatus(B_TRANSLATE_COMMENT("Completed tasks", "Status message"));
+	//	_UpdateStatus(B_TRANSLATE_COMMENT("Completed tasks", "Status message"));
 		fMsgTarget->PostMessage(TASKS_COMPLETE);
 	}
 	else
 	{
-		BString finalText;
+	/*	BString finalText;
 		if(errorCount==1)
 			finalText.SetTo(B_TRANSLATE_COMMENT("Completed tasks with 1 error", "Status message"));
 		else
@@ -143,7 +145,48 @@ TaskLooper::_DoTasks()
 		BString total;
 		total<<errorCount;
 		finalText.ReplaceFirst("%total%", total);
-		_UpdateStatus(finalText);
+		_UpdateStatus(finalText);*/
+		
+		// Error alert
+		BString errorText;
+		switch(fWhat){
+			case DISABLE_BUTTON_PRESSED: {
+				errorText.SetTo(B_TRANSLATE_COMMENT("There was an error disabling the depot", "Error message"));
+				if(errorCount==1)
+				{
+					errorText.Append(" ").Append(erroredParams.StringAt(0));
+				}
+				else
+				{
+					errorText.Append("s:\n\n");
+					
+					for(int32 index=0; index < errorCount; index++)
+					{
+						errorText.Append(erroredParams.StringAt(index)).Append("\n");
+					}
+				}
+				break;
+			}
+			case ENABLE_BUTTON_PRESSED: {
+				errorText.SetTo(B_TRANSLATE_COMMENT("There was an error enabling the depot", "Error message"));
+				if(errorCount==1)
+				{
+					errorText.Append(" ").Append(erroredParams.StringAt(0));
+				}
+				else
+				{
+					errorText.Append("s:\n\n");
+					int32 count = erroredParams.CountStrings();
+					for(int32 index=0; index < errorCount; index++)
+					{
+						errorText.Append(erroredParams.StringAt(index)).Append("\n");
+					}
+				}
+				break;
+			}
+		}
+		(new ErrorAlert(fPkgmanTaskOut, "error", errorText, B_TRANSLATE_COMMENT("View Details", " Button label"), kOKLabel))->Go(NULL);
+		
 		fMsgTarget->PostMessage(TASKS_COMPLETE_WITH_ERRORS);
 	}
 	
@@ -215,6 +258,9 @@ TaskWindow::MessageReceived(BMessage* msg)
 			{
 				Lock();
 				fStatus->Update(1, statusText);
+				// Disable button if we are on the last task
+			//	if(fStatus->CurrentValue() == fStatus->MaxValue() - 1)
+			//		fCancelButton->SetEnabled(false);
 				UpdateIfNeeded();
 				Unlock();
 			}
@@ -226,11 +272,12 @@ TaskWindow::MessageReceived(BMessage* msg)
 			break;
 		}
 		case TASKS_COMPLETE_WITH_ERRORS: {
-			Lock();
-			fCancelButton->SetLabel(kOKLabel);
-			UpdateIfNeeded();
-			Unlock();
+		//	Lock();
+		//	fCancelButton->SetLabel(kOKLabel);
+		//	UpdateIfNeeded();
+		//	Unlock();
 			msgLooper->PostMessage(UPDATE_LIST);
+			Quit();
 			break;
 		}
 		case CANCEL_BUTTON_PRESSED: {

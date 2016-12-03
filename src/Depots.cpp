@@ -83,7 +83,7 @@ DepotsApplication::DepotsApplication()
 void
 DepotsApplication::AboutRequested()
 {
-	BString text(B_TRANSLATE_COMMENT("Depots preflet Copyright 2016 by Brian Hill", "About box line 1"));
+	BString text(B_TRANSLATE_COMMENT("Depots preflet Copyright © 2016 by Brian Hill", "About box line 1"));
 	text.Append("\n\n");
 	text.Append(B_TRANSLATE_COMMENT("This preflet will enable and disable depots "\
 								"used in the HaikuDepot application.", "About box line 2"));

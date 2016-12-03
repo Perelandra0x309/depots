@@ -1,9 +1,9 @@
-1	English	application/x-vnd.BH-Depots	3253827517
+1	English	application/x-vnd.BH-Depots	3369464727
 Add	AddRepoWindow	Button label	Add
 Depot URL:	AddRepoWindow	Text box label	Depot URL:
 Cancel	Constants	Button label	Cancel
 OK	Constants	Button label	OK
-Depots preflet Copyright 2016 by Brian Hill	DepotsApplication	About box line 1	Depots preflet Copyright 2016 by Brian Hill
+Depots preflet Copyright © 2016 by Brian Hill	DepotsApplication	About box line 1	Depots preflet Copyright © 2016 by Brian Hill
 This preflet will enable and disable depots used in the HaikuDepot application.	DepotsApplication	About box line 2	This preflet will enable and disable depots used in the HaikuDepot application.
 Disable	DepotsView	Button label	Disable
 Disable All	DepotsView	Button label	Disable All
@@ -19,12 +19,10 @@ You can only enable one URL for each depot.  Please change your selections.	Depo
 Select depots to use in HaikuDepot:	DepotsView	Label text	Select depots to use in HaikuDepot:
 Unknown	DepotsView	Unknown depot name	Unknown
 Depots	System name		Depots
+View Details	TaskWindow	 Button label	View Details
 Task (%number% of %total%): Disabling depot	TaskWindow	Do not translate %number% and %total%	Task (%number% of %total%): Disabling depot
 Task (%number% of %total%): Enabling depot	TaskWindow	Do not translate %number% and %total%	Task (%number% of %total%): Enabling depot
 There was an error disabling the depot	TaskWindow	Error message	There was an error disabling the depot
 There was an error enabling the depot	TaskWindow	Error message	There was an error enabling the depot
 Canceling tasks, please wait…	TaskWindow	Status bar text	Canceling tasks, please wait…
 Successfully canceled remaining tasks	TaskWindow	Status bar text	Successfully canceled remaining tasks
-Completed tasks	TaskWindow	Status message	Completed tasks
-Completed tasks with 1 error	TaskWindow	Status message	Completed tasks with 1 error
-Completed tasks with %total% errors	TaskWindow	Status message, do not translate %total%	Completed tasks with %total% errors
