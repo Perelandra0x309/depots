@@ -20,6 +20,19 @@ DepotsSettings::DepotsSettings()
 	if (status == B_OK) {
 		status = fFilePath.Append(settingsFilename);
 	}
+	BEntry fileEntry(fFilePath.Path());
+	if(!fileEntry.Exists())
+	{
+		// Create default repos
+		BStringList nameList, urlList;
+		int32 count = (sizeof(kDefaultRepos) / sizeof(Repository));
+		for(int index=0; index < count; index++)
+		{
+			nameList.Add(kDefaultRepos[index].name);
+			urlList.Add(kDefaultRepos[index].url);
+		}
+		SetRepositories(nameList, urlList);
+	}
 	fInitStatus = status;
 }
 
