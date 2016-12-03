@@ -75,7 +75,15 @@ DepotsView::DepotsView()
 	status_t status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanListOut);
 	if (status == B_OK) {
 		fPkgmanListOut.Append("pkgman_list");
-	}//TODO alternatives?
+	}
+	// alternate location
+	else
+	{
+		status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanListOut);
+		if (status == B_OK) {
+			fPkgmanListOut.Append("pkgman_task");
+		}
+	}
 	
 	fListView = new BColumnListView("list", B_NAVIGABLE, B_PLAIN_BORDER);
 	fListView->SetSelectionMessage(new BMessage(LIST_SELECTION_CHANGED));

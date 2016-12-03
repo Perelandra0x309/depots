@@ -29,8 +29,15 @@ TaskLooper::TaskLooper(int32 what, BStringList params, BLooper *target)
 	status_t status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanTaskOut);
 	if (status == B_OK) {
 		fPkgmanTaskOut.Append("pkgman_task");
-	}//TODO alternatives?
-	
+	}
+	// alternate location
+	else
+	{
+		status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanTaskOut);
+		if (status == B_OK) {
+			fPkgmanTaskOut.Append("pkgman_task");
+		}
+	}
 	Run();
 }
 
@@ -93,11 +100,10 @@ TaskLooper::_DoTasks()
 				_UpdateStatus(statusText);
 				// Create command
 				BString command("yes | pkgman drop \"");
-				command.Append(nameParam).Append("\" >> ").Append(fPkgmanTaskOut.Path());
+				command.Append(nameParam).Append("\" &>> ").Append(fPkgmanTaskOut.Path());
 				int sysResult = system(command.String());
 				if(sysResult)
 				{
-					//TODO not getting error message in file?
 					erroredParams.Add(nameParam);
 				}
 				command.SetTo("echo '\n' >> ").Append(fPkgmanTaskOut.Path());
@@ -117,7 +123,7 @@ TaskLooper::_DoTasks()
 				_UpdateStatus(statusText);
 				// Create command
 				BString command("yes | pkgman add \"");
-				command.Append(urlParam).Append("\" >> ").Append(fPkgmanTaskOut.Path());
+				command.Append(urlParam).Append("\" &>> ").Append(fPkgmanTaskOut.Path());
 				int sysResult = system(command.String());
 				if(sysResult)
 				{
