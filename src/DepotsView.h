@@ -53,6 +53,7 @@ private:
 	BString					fTitleEnabled, fTitleName, fTitleUrl,
 							fLabelRemove, fLabelRemoveAll,
 							fLabelEnable, fLabelDisable, fLabelEnableAll, fLabelDisableAll;
+	BString					_GetRootUrl(BString url);
 	void					_InitList();
 	void					_UpdatePkgmanList(bool updateStatusOnly=false);
 	void					_SaveList();

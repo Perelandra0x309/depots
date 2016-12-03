@@ -98,7 +98,7 @@ DepotsView::DepotsView()
 	// ---Minimal buttons option---
 	font_height fontHeight;
 	GetFontHeight(&fontHeight);
-	int buttonSize = fontHeight.ascent + fontHeight.descent + 12;
+	int buttonSize = int(fontHeight.ascent + fontHeight.descent + 12);
 	BView *button1View = new BView("button1View", B_WILL_DRAW);
 	BRect btnSize(0,0,buttonSize,buttonSize);
 	fAddButton = new BButton(btnSize, "plus", "+", new BMessage(ADD_REPO_WINDOW));
@@ -323,24 +323,53 @@ DepotsView::Clean()
 void
 DepotsView::AddManualRepository(BString url)
 {
+	BString name(B_TRANSLATE_COMMENT("Unknown", "Unknown depot name"));
+	BString rootUrl = _GetRootUrl(url);
+	bool foundRoot = false;
 	int32 index;
 	int32 listCount = fListView->CountRows();
-	// Find duplicate
 	for(index=0; index < listCount; index++)
 	{
+		// Find duplicate
 		RepoRow *repoItem = (RepoRow*)(fListView->RowAt(index));
 		if(url.ICompare(repoItem->Url()) == 0)
 		{
 			(new BAlert("duplicate", B_TRANSLATE_COMMENT("Depot already exists.", "Error message"), kOKLabel))->Go();
 			return; 
 		}
+		//Find same root url
+		if(foundRoot == false && rootUrl == _GetRootUrl(repoItem->Url()))
+		{
+			foundRoot = true;
+			name = repoItem->Name();
+		}
 	}
-	BString name(B_TRANSLATE_COMMENT("Unknown", "Unknown depot name"));
 	RepoRow *newRepo = _AddRepo(name, url, false);
 	fListView->DeselectAll();
 	fListView->AddToSelection(newRepo);
 	_UpdateButtons();
 	_SaveList();
+}
+
+
+BString
+DepotsView::_GetRootUrl(BString url)
+{
+	// Find the protocol if it exists
+	int32 ww = url.FindFirst("://");
+	if(ww == B_ERROR)
+		ww = 0;
+	else
+		ww += 3;
+	// Find second /
+	int32 rootEnd = url.FindFirst("/", ww+1);
+	if(rootEnd == B_ERROR)
+		return url;
+	rootEnd = url.FindFirst("/", rootEnd+1);
+	if(rootEnd == B_ERROR)
+		return url;
+	else
+		return url.Truncate(rootEnd);
 }
 
 
