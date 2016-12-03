@@ -152,40 +152,17 @@ TaskLooper::_DoTasks()
 		switch(fWhat){
 			case DISABLE_BUTTON_PRESSED: {
 				errorText.SetTo(B_TRANSLATE_COMMENT("There was an error disabling the depot", "Error message"));
-				if(errorCount==1)
-				{
-					errorText.Append(" ").Append(erroredParams.StringAt(0));
-				}
-				else
-				{
-					errorText.Append("s:\n\n");
-					
-					for(int32 index=0; index < errorCount; index++)
-					{
-						errorText.Append(erroredParams.StringAt(index)).Append("\n");
-					}
-				}
 				break;
 			}
 			case ENABLE_BUTTON_PRESSED: {
 				errorText.SetTo(B_TRANSLATE_COMMENT("There was an error enabling the depot", "Error message"));
-				if(errorCount==1)
-				{
-					errorText.Append(" ").Append(erroredParams.StringAt(0));
-				}
-				else
-				{
-					errorText.Append("s:\n\n");
-					int32 count = erroredParams.CountStrings();
-					for(int32 index=0; index < errorCount; index++)
-					{
-						errorText.Append(erroredParams.StringAt(index)).Append("\n");
-					}
-				}
 				break;
 			}
 		}
+		errorText.Append(errorCount > 1 ? "s:\n\n" : " ");
+		errorText.Append(erroredParams.Join("\n"));
 		(new ErrorAlert(fPkgmanTaskOut, "error", errorText, B_TRANSLATE_COMMENT("View Details", " Button label"), kOKLabel))->Go(NULL);
+		// TODO add a details text view to this?
 		
 		fMsgTarget->PostMessage(TASKS_COMPLETE_WITH_ERRORS);
 	}

@@ -96,8 +96,10 @@ DepotsView::DepotsView()
 	
 #if USE_MINIMAL_BUTTONS
 	// ---Minimal buttons option---
+	font_height fontHeight;
+	GetFontHeight(&fontHeight);
+	int buttonSize = fontHeight.ascent + fontHeight.descent + 12;
 	BView *button1View = new BView("button1View", B_WILL_DRAW);
-	int buttonSize = 25;
 	BRect btnSize(0,0,buttonSize,buttonSize);
 	fAddButton = new BButton(btnSize, "plus", "+", new BMessage(ADD_REPO_WINDOW));
 	button1View->SetExplicitMinSize(BSize(buttonSize, buttonSize));

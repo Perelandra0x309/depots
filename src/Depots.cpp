@@ -90,13 +90,17 @@ DepotsApplication::AboutRequested()
 	BAlert *aboutAlert = new BAlert("About", text, kOKLabel);
 	aboutAlert->SetFlags(aboutAlert->Flags() | B_CLOSE_ON_ESCAPE);
 	// Add clickable URL
+	int strutSize = 5;
+	URLView *urlLink = new URLView("url", kWebsiteUrl);
+	float urlHeight;
+	urlLink->GetPreferredSize(NULL, &urlHeight);
 	BTextView *textView = aboutAlert->TextView();
 	BLayoutBuilder::Group<>(textView, B_VERTICAL, 0)
 		.AddGlue()
-		.Add(new URLView("url", kWebsiteUrl))
-		.AddStrut(3);
-	BSize viewSize=textView->MinSize();
-	viewSize.height+=75;
+		.Add(urlLink)
+		.AddStrut(strutSize);
+	BSize viewSize = textView->MinSize();
+	viewSize.height += 7*urlHeight + strutSize;
 	textView->SetExplicitMinSize(viewSize);
 	
 	aboutAlert->Go();
