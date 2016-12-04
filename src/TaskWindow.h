@@ -21,7 +21,7 @@ public:
 	virtual	bool			QuitRequested();
 	virtual void			MessageReceived(BMessage*);
 private:
-	BPath					fPkgmanTaskOut;
+	BPath					fPkgmanTaskOut, fPkgmanTaskErr;
 	BStringList				fParams;
 	int32					fWhat, fOutfileInit;
 	bool					fQuitWasRequested;

@@ -31,7 +31,9 @@ TaskLooper::TaskLooper(int32 what, BStringList params, BLooper *target)
 	if (status != B_OK)
 		status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanTaskOut); // alternate location
 	if (status == B_OK) {
-		fPkgmanTaskOut.Append("pkgman_task");
+		fPkgmanTaskErr = fPkgmanTaskOut;
+		fPkgmanTaskOut.Append("pkgman_out");
+		fPkgmanTaskErr.Append("pkgman_stderr");
 		fOutfileInit = B_OK;
 	}
 	Run();
@@ -67,9 +69,10 @@ TaskLooper::_DoTasks()
 {
 	
 	// Delete existing temp file
-	BEntry tmpEntry(fPkgmanTaskOut.Path());
+	BEntry tmpEntry(fPkgmanTaskErr.Path());
 	if(tmpEntry.Exists())
 		tmpEntry.Remove();
+	tmpEntry.Unset();
 	
 	BStringList erroredParams;
 	int32 index, count = fParams.CountStrings();
@@ -96,14 +99,22 @@ TaskLooper::_DoTasks()
 				_UpdateStatus(statusText);
 				// Create command
 				BString command("yes | pkgman drop \"");
-				command.Append(nameParam).Append("\" &>> ").Append(fPkgmanTaskOut.Path());
+				command.Append(nameParam).Append("\" > ").Append(fPkgmanTaskOut.Path());
+				command.Append(" 2> ").Append(fPkgmanTaskOut.Path()).Append("2");
 				int sysResult = system(command.String());
 				if(sysResult)
 				{
 					erroredParams.Add(nameParam);
+					command.SetTo("echo \"[");
+					command.Append(nameParam).Append("]\"").Append(" >> ").Append(fPkgmanTaskErr.Path());
+					system(command.String());
+					command.SetTo("cat ");
+					command.Append(fPkgmanTaskOut.Path()).Append(" >> ").Append(fPkgmanTaskErr.Path());
+					command.Append("; cat ").Append(fPkgmanTaskOut.Path()).Append("2 >> ").Append(fPkgmanTaskErr.Path());
+					system(command.String());
+					command.SetTo("echo '\n' >> ").Append(fPkgmanTaskErr.Path());
+					system(command.String());
 				}
-				command.SetTo("echo '\n' >> ").Append(fPkgmanTaskOut.Path());
-				system(command.String());
 				break;
 			}
 			case ENABLE_BUTTON_PRESSED: {
@@ -119,18 +130,38 @@ TaskLooper::_DoTasks()
 				_UpdateStatus(statusText);
 				// Create command
 				BString command("yes | pkgman add \"");
-				command.Append(urlParam).Append("\" &>> ").Append(fPkgmanTaskOut.Path());
+				command.Append(urlParam).Append("\" > ").Append(fPkgmanTaskOut.Path());
+				command.Append(" 2> ").Append(fPkgmanTaskOut.Path()).Append("2");
 				int sysResult = system(command.String());
 				if(sysResult)
 				{
 					erroredParams.Add(urlParam);
+					command.SetTo("echo \"[");
+					command.Append(urlParam).Append("]\"").Append(" >> ").Append(fPkgmanTaskErr.Path());
+					system(command.String());
+					command.SetTo("cat ");
+					command.Append(fPkgmanTaskOut.Path()).Append(" >> ").Append(fPkgmanTaskErr.Path());
+					command.Append("; cat ").Append(fPkgmanTaskOut.Path()).Append("2 >> ").Append(fPkgmanTaskErr.Path());
+					system(command.String());
+					command.SetTo("echo '\n' >> ").Append(fPkgmanTaskErr.Path());
+					system(command.String());
 				}
-				command.SetTo("echo '\n' >> ").Append(fPkgmanTaskOut.Path());
-				system(command.String());
 				break;
 			}
 		}
 	}
+	// Delete temp files
+	tmpEntry.SetTo(fPkgmanTaskOut.Path());
+	if(tmpEntry.Exists())
+		tmpEntry.Remove();
+	BString out2Path(fPkgmanTaskOut.Path());
+	out2Path.Append("2");
+	tmpEntry.SetTo(out2Path);
+	if(tmpEntry.Exists())
+		tmpEntry.Remove();
+	tmpEntry.Unset();
+	
+	// Report completion or errors
 	int32 errorCount = erroredParams.CountStrings();
 	if(errorCount==0)
 	{
@@ -163,7 +194,7 @@ TaskLooper::_DoTasks()
 		}
 		errorText.Append(errorCount > 1 ? "s:\n\n" : " ");
 		errorText.Append(erroredParams.Join("\n"));
-		(new ErrorAlert(fPkgmanTaskOut, "error", errorText, B_TRANSLATE_COMMENT("View Details", " Button label"), kOKLabel))->Go(NULL);
+		(new ErrorAlert(fPkgmanTaskErr, "error", errorText, B_TRANSLATE_COMMENT("View Details", " Button label"), kOKLabel))->Go(NULL);
 		// TODO add a details text view to this?
 		
 		fMsgTarget->PostMessage(TASKS_COMPLETE_WITH_ERRORS);
