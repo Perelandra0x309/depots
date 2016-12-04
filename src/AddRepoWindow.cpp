@@ -2,6 +2,7 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
+#include <Alert.h>
 #include <Catalog.h>
 #include <LayoutBuilder.h>
 
@@ -54,10 +55,20 @@ AddRepoWindow::MessageReceived(BMessage* msg)
 			BString url(fText->Text());
 			if(url != "")
 			{
-				BMessage *addMsg = new BMessage(ADD_REPO_URL);
-				addMsg->AddString(key_url, url);
-				msgLooper->PostMessage(addMsg);
-				Quit();
+				// URL must have a protocol
+				if(url.FindFirst("://") == B_ERROR)
+				{
+					(new BAlert("error", B_TRANSLATE_COMMENT("The URL must start with a protocol, "
+									"for example http:// or https://", "Add URL error message"), kOKLabel,
+										NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
+				}
+				else
+				{
+					BMessage *addMsg = new BMessage(ADD_REPO_URL);
+					addMsg->AddString(key_url, url);
+					msgLooper->PostMessage(addMsg);
+					Quit();
+				}
 			}
 			break;
 		}

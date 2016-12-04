@@ -23,20 +23,16 @@ TaskLooper::TaskLooper(int32 what, BStringList params, BLooper *target)
 	fWhat(what),
 	fParams(params),
 	fMsgTarget(target),
-	fQuitWasRequested(false)
+	fQuitWasRequested(false),
+	fOutfileInit(B_ERROR)
 {
 	// Temp file location
-	status_t status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanTaskOut);
+	status_t status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanTaskOut);
+	if (status != B_OK)
+		status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanTaskOut); // alternate location
 	if (status == B_OK) {
 		fPkgmanTaskOut.Append("pkgman_task");
-	}
-	// alternate location
-	else
-	{
-		status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanTaskOut);
-		if (status == B_OK) {
-			fPkgmanTaskOut.Append("pkgman_task");
-		}
+		fOutfileInit = B_OK;
 	}
 	Run();
 }

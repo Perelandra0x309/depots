@@ -72,17 +72,11 @@ DepotsView::DepotsView()
 	fLabelDisableAll(B_TRANSLATE_COMMENT("Disable All", "Button label"))
 {
 	// Temp file location
-	status_t status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanListOut);
+	status_t status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanListOut);
+	if (status != B_OK)
+		status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanListOut); // alternate location
 	if (status == B_OK) {
-		fPkgmanListOut.Append("pkgman_list");
-	}
-	// alternate location
-	else
-	{
-		status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanListOut);
-		if (status == B_OK) {
-			fPkgmanListOut.Append("pkgman_task");
-		}
+		fPkgmanListOut.Append("pkgman_task");
 	}
 	
 	fListView = new BColumnListView("list", B_NAVIGABLE, B_PLAIN_BORDER);
@@ -340,13 +334,14 @@ DepotsView::AddManualRepository(BString url)
 	{
 		// Find duplicate
 		RepoRow *repoItem = (RepoRow*)(fListView->RowAt(index));
-		if(url.ICompare(repoItem->Url()) == 0)
+		const char *urlPtr = repoItem->Url();
+		if(url.ICompare(urlPtr) == 0)
 		{
 			(new BAlert("duplicate", B_TRANSLATE_COMMENT("Depot already exists.", "Error message"), kOKLabel))->Go();
 			return; 
 		}
 		//Find same root url
-		if(foundRoot == false && rootUrl == _GetRootUrl(repoItem->Url()))
+		if(foundRoot == false && rootUrl.Compare(urlPtr, rootUrl.Length()) == 0)
 		{
 			foundRoot = true;
 			name = repoItem->Name();
@@ -477,6 +472,9 @@ DepotsView::_SaveList()
 RepoRow*
 DepotsView::_AddRepo(BString name, BString url, bool enabled)
 {
+	// URL must have a protocol
+	if(url.FindFirst("://") == B_ERROR)
+		return NULL;
 //	printf("Adding:%s:%s\n", name.String(), url.String());
 //	RepoRow *newRepo = new RepoRow(name, url, enabled);
 	RepoRow *addedRow=NULL;

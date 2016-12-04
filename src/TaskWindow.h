@@ -23,7 +23,7 @@ public:
 private:
 	BPath					fPkgmanTaskOut;
 	BStringList				fParams;
-	int32					fWhat;
+	int32					fWhat, fOutfileInit;
 	bool					fQuitWasRequested;
 	void					_DoTasks();
 	void					_UpdateStatus(BString text);
