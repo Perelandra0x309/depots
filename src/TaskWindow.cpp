@@ -99,21 +99,28 @@ TaskLooper::_DoTasks()
 				_UpdateStatus(statusText);
 				// Create command
 				BString command("yes | pkgman drop \"");
-				command.Append(nameParam).Append("\" > ").Append(fPkgmanTaskOut.Path());
-				command.Append(" 2> ").Append(fPkgmanTaskOut.Path()).Append("2");
+				command.Append(nameParam).Append("\"");
+				if(fOutfileInit == B_OK)
+				{
+					command.Append(" > ").Append(fPkgmanTaskOut.Path());
+					command.Append(" 2> ").Append(fPkgmanTaskOut.Path()).Append("2");
+				}
 				int sysResult = system(command.String());
 				if(sysResult)
 				{
 					erroredParams.Add(nameParam);
-					command.SetTo("echo \"[");
-					command.Append(nameParam).Append("]\"").Append(" >> ").Append(fPkgmanTaskErr.Path());
-					system(command.String());
-					command.SetTo("cat ");
-					command.Append(fPkgmanTaskOut.Path()).Append(" >> ").Append(fPkgmanTaskErr.Path());
-					command.Append("; cat ").Append(fPkgmanTaskOut.Path()).Append("2 >> ").Append(fPkgmanTaskErr.Path());
-					system(command.String());
-					command.SetTo("echo '\n' >> ").Append(fPkgmanTaskErr.Path());
-					system(command.String());
+					if(fOutfileInit == B_OK)
+					{
+						command.SetTo("echo \"[");
+						command.Append(nameParam).Append("]\"").Append(" >> ").Append(fPkgmanTaskErr.Path());
+						system(command.String());
+						command.SetTo("cat ");
+						command.Append(fPkgmanTaskOut.Path()).Append(" >> ").Append(fPkgmanTaskErr.Path());
+						command.Append("; cat ").Append(fPkgmanTaskOut.Path()).Append("2 >> ").Append(fPkgmanTaskErr.Path());
+						system(command.String());
+						command.SetTo("echo '\n' >> ").Append(fPkgmanTaskErr.Path());
+						system(command.String());
+					}
 				}
 				break;
 			}
@@ -130,21 +137,28 @@ TaskLooper::_DoTasks()
 				_UpdateStatus(statusText);
 				// Create command
 				BString command("yes | pkgman add \"");
-				command.Append(urlParam).Append("\" > ").Append(fPkgmanTaskOut.Path());
-				command.Append(" 2> ").Append(fPkgmanTaskOut.Path()).Append("2");
+				command.Append(urlParam).Append("\"");
+				if(fOutfileInit == B_OK)
+				{
+					command.Append(" > ").Append(fPkgmanTaskOut.Path());
+					command.Append(" 2> ").Append(fPkgmanTaskOut.Path()).Append("2");
+				}
 				int sysResult = system(command.String());
 				if(sysResult)
 				{
 					erroredParams.Add(urlParam);
-					command.SetTo("echo \"[");
-					command.Append(urlParam).Append("]\"").Append(" >> ").Append(fPkgmanTaskErr.Path());
-					system(command.String());
-					command.SetTo("cat ");
-					command.Append(fPkgmanTaskOut.Path()).Append(" >> ").Append(fPkgmanTaskErr.Path());
-					command.Append("; cat ").Append(fPkgmanTaskOut.Path()).Append("2 >> ").Append(fPkgmanTaskErr.Path());
-					system(command.String());
-					command.SetTo("echo '\n' >> ").Append(fPkgmanTaskErr.Path());
-					system(command.String());
+					if(fOutfileInit == B_OK)
+					{
+						command.SetTo("echo \"[");
+						command.Append(urlParam).Append("]\"").Append(" >> ").Append(fPkgmanTaskErr.Path());
+						system(command.String());
+						command.SetTo("cat ");
+						command.Append(fPkgmanTaskOut.Path()).Append(" >> ").Append(fPkgmanTaskErr.Path());
+						command.Append("; cat ").Append(fPkgmanTaskOut.Path()).Append("2 >> ").Append(fPkgmanTaskErr.Path());
+						system(command.String());
+						command.SetTo("echo '\n' >> ").Append(fPkgmanTaskErr.Path());
+						system(command.String());
+					}
 				}
 				break;
 			}
@@ -194,8 +208,10 @@ TaskLooper::_DoTasks()
 		}
 		errorText.Append(errorCount > 1 ? "s:\n\n" : " ");
 		errorText.Append(erroredParams.Join("\n"));
-		(new ErrorAlert(fPkgmanTaskErr, "error", errorText, B_TRANSLATE_COMMENT("View Details", " Button label"), kOKLabel))->Go(NULL);
-		// TODO add a details text view to this?
+		if(fOutfileInit == B_OK)
+			(new ErrorAlert(fPkgmanTaskErr, "error", errorText, B_TRANSLATE_COMMENT("View Details", " Button label"), kOKLabel))->Go(NULL);
+		else
+			(new BAlert("error", errorText, kOKLabel))->Go(NULL);
 		
 		fMsgTarget->PostMessage(TASKS_COMPLETE_WITH_ERRORS);
 	}

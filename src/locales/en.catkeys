@@ -1,4 +1,5 @@
-1	English	application/x-vnd.BH-Depots	3369464727
+1	English	application/x-vnd.BH-Depots	275878709
+The URL must start with a protocol, for example http:// or https://	AddRepoWindow	Add URL error message	The URL must start with a protocol, for example http:// or https://
 Add	AddRepoWindow	Button label	Add
 Depot URL:	AddRepoWindow	Text box label	Depot URL:
 Cancel	Constants	Button label	Cancel
