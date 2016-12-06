@@ -8,13 +8,14 @@ SRCS = ErrorAlert.cpp \
 	DepotsWindow.cpp \
 	DepotsSettings.cpp \
 	Depots.cpp
-LIBS := be localestub tracker /boot/system/develop/lib/libcolumnlistview.a $(STDCPPLIBS)
-OPTIMIZE := FULL
+
+LIBS = be localestub tracker columnlistview $(STDCPPLIBS)
+OPTIMIZE = FULL
 RDEFS = Depots.rdef
-LIBPATHS = /boot/system/develop/lib
+LIBPATHS =
 SYSTEM_INCLUDE_PATHS = /boot/system/develop/headers/private/interface
 LOCALES = en
-TARGET_DIR := .
+TARGET_DIR = .
 
 ## Include the Makefile-Engine
 DEVEL_DIRECTORY := \
