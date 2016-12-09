@@ -41,20 +41,34 @@
 <p><img src="images/installhpkg.png">
 <p>An alternate install method is using the HaikuDepot application included in the Haiku Nightly images.  Search for "Depots", select it in the list and click the "Install" button.
 <p><img src="images/haikudepot.png">
-<p>When new versions of Depots are released the Haiku package manager will update the Depots package.
+<p>When a new version of Depots is released the Haiku package manager will update the Depots package.
 
 <h3>
 <a id="using-depots" class="anchor" href="#using-depots" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How To Use Depots</h3>
+<p>The Depots preflet will show a list of all known depots and whether each is currently enabed or not.  When a depot is enabled then any packages stored on that depot will be displayed in the HaikuDepot application and pacakges can be updated using the "pkgman" command.  Here is what the Depots preflet will look like with some depots enabled:
+<p>
+<p>To add a new depot to the list, click on the "+" button at the bottom left of the list.  You will need to know the URL of the depot and type or paste that into the text area:
+<p>When you add a new depot the name of it will be displayed as "Unknown".  Once you enable the depot the name will become the name that the server identifies itself as.
+<p>
+<p>If you wish to remove a depot from the list, select it then click the "-" button.  A depot must not be enabled to be removeable.
+<p>
+<p>To enable or disable a depot, select it in the list then click the appropriate button on the bottom right, either "Enable" or "Disable".  A window with a progress bar will appear showing the status of the enable or disable task.  This may take a few seconds but once completed the window will disappear and the list will be updated with the new enabled status of the depot:
+<p>
+<p>It is possible to enable, disable and remove multiple depots at once.  Select mutiple depots in the list using either the SHIFT or CTRL key.  To enable or remove multiple depots all the selected ones must be disabled.  To disable multiple depots all the selected ones must be enabled.  The buttons will be dithered out for those tasks which are not possible to perform for the selected depots.
+<p>
+<p>You may add multiple unique URLs that point to the same depot server.  For example you might have a URL for the "current" packages, and other URLs for specific release versions.  However only one URL from each depot server can be enabled at any one time.  If you enable a URL for a depot the already has another URL enabled, the enabled URL will be disabled and the one you selected will be enabled.
+<p>
+<p>
 
 <h3>
 <a id="authors-and-contributors" class="anchor" href="#authors-and-contributors" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Authors and Contributors</h3>
 
-<p>You can @mention a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor’s GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<p>Copyright 2016, written by Brian Hill(<a href="https://github.com/Perelandra0x309" class="user-mention">@Perelandra0x309</a>)</p>
 
 <h3>
 <a id="support-or-contact" class="anchor" href="#support-or-contact" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Support or Contact</h3>
 
-<p>Having trouble with Pages? Check out our <a href="https://help.github.com/pages">documentation</a> or <a href="https://github.com/contact">contact support</a> and we’ll help you sort it out.</p>
+<p>Issues may be logged on the project's <a href="https://github.com/Perelandra0x309/depots/issues">Issues</a> page.</p>
       </section>
       <footer>
         <p>This project is maintained by <a href="https://github.com/Perelandra0x309">Perelandra0x309</a></p>
