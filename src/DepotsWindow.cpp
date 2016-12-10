@@ -4,12 +4,17 @@
  */
 #include <Application.h>
 #include <Catalog.h>
+#include <FindDirectory.h>
 #include <LayoutBuilder.h>
+#include <NodeMonitor.h>
+#include <Region.h>
 #include <Screen.h>
 
 #include "AddRepoWindow.h"
 #include "constants.h"
 #include "DepotsWindow.h"
+
+#include <stdio.h>
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "DepotsWindow"
@@ -18,7 +23,8 @@
 DepotsWindow::DepotsWindow(BRect size)
 	:
 	BWindow(size, B_TRANSLATE_SYSTEM_NAME("Depots"), B_TITLED_WINDOW, B_NOT_ZOOMABLE |
-		B_ASYNCHRONOUS_CONTROLS)
+		B_ASYNCHRONOUS_CONTROLS),
+	fPackageNodeStatus(B_ERROR)
 {
 	fView = new DepotsView();
 	BLayoutBuilder::Group<>(this, B_VERTICAL)
@@ -38,13 +44,65 @@ DepotsWindow::DepotsWindow(BRect size)
 	else
 		MoveTo(frame.left, frame.top);
 	Show();
+	
+	// Find the pkgman settings or cache directory
+	BPath packagePath;
+	// /boot/system/settings/package-repositories
+	status_t status = find_directory(B_SYSTEM_SETTINGS_DIRECTORY, &packagePath);
+	if (status == B_OK) {
+		status = packagePath.Append("package-repositories");
+	}
+	else
+	{
+		// /boot/system/cache/package-repositories
+		status = find_directory(B_SYSTEM_CACHE_DIRECTORY, &packagePath);
+		if (status == B_OK) {
+			status = packagePath.Append("package-repositories");
+		}
+	}
+	if (status == B_OK)
+	{
+		BNode packageNode(packagePath.Path());
+		if(packageNode.InitCheck()==B_OK && packageNode.IsDirectory())
+		{
+			fPackageNodeStatus = packageNode.GetNodeRef(&fPackageNodeRef);
+//			printf("node=%s\n", packagePath.Path());
+		}
+	}
+
+	// watch the pkgman settings or cache directory for changes
+	_StartWatching();
 }
 
-/*
+
 DepotsWindow::~DepotsWindow()
 {
+	_StopWatching();
+}
 
-}*/
+
+void
+DepotsWindow::_StartWatching()
+{
+	if(fPackageNodeStatus == B_OK)
+	{
+		status_t result = watch_node(&fPackageNodeRef, B_WATCH_DIRECTORY, this);
+		fWatchingPackageNode = (result==B_OK);
+		printf("Watching node was %ssuccessful. Result = %i\n", fWatchingPackageNode ? "": "not ", result);
+	}
+}
+
+
+void
+DepotsWindow::_StopWatching()
+{
+	if(fPackageNodeStatus == B_OK && fWatchingPackageNode)// package-repositories directory is being watched
+	{	
+		watch_node(&fPackageNodeRef, B_STOP_WATCHING, this);
+		printf("Stopped watching node\n");
+		fWatchingPackageNode = false;
+	}
+}
 
 
 bool
@@ -61,8 +119,6 @@ DepotsWindow::MessageReceived(BMessage* msg)
 {
 	switch(msg->what)
 	{
-		//TODO capture pkgman commands run while Depots application is running
-		
 		case ADD_REPO_WINDOW: {
 			new AddRepoWindow(Frame(), this);
 			break;
@@ -77,13 +133,53 @@ DepotsWindow::MessageReceived(BMessage* msg)
 		case LIST_SELECTION_CHANGED: 
 		case UPDATE_LIST: {
 			fView->MessageReceived(msg);
+//			BRegion region;
+//			fView->GetClippingRegion(&region);
+//			fView->Invalidate(&region);
+
+//			fView->Draw(Bounds());
+			UpdateIfNeeded();
+			Sync();
+			Flush();
+			MoveBy(1,1);
+			printf("View updated\n");
 			break;
 		}
 		case SHOW_ABOUT: {
 			be_app->AboutRequested();
 			break;
 		}
+		//TODO capture pkgman commands run while Depots application is running
+		//the settings file node_ref has changed
+		case B_NODE_MONITOR: {
+			int32 opcode;
+		/*	if (msg->FindInt32("opcode", &opcode) == B_OK)
+			{	switch (opcode)
+				{	case B_STAT_CHANGED: {
+						node_ref nref;
+						msg->FindInt32("device", &nref.device);
+						msg->FindInt64("node", &nref.node);
+						if(nref == fSettingsNodeRef)
+						{	printf("Daemon settings file changed, loading new settings...\n");
+							_ReadSettingsFromFile(fSettingsPath);
+							// Notify the external message handler if available
+							if(fExternalMessageHandler!=NULL)
+							{
+								status_t mErr;
+								BMessenger messenger(fExternalMessageHandler, NULL, &mErr);
+								if(messenger.IsValid())
+									messenger.SendMessage(ED_SETTINGS_FILE_CHANGED_EXTERNALLY);
+							}
+						}
+						break;
+					}
+				}
+			}*/
+			PostMessage(UPDATE_LIST);
+			break;
+		}
 		default:
 			BWindow::MessageReceived(msg);
 	}
 }
+
