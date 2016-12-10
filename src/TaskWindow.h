@@ -41,7 +41,7 @@ private:
 	BStatusBar				*fStatus;
 	BButton					*fCancelButton;
 	TaskLooper				*fTaskLooper;
-	BLooper					*msgLooper;
+	BLooper					*fMsgLooper;
 };
 
 #endif

@@ -17,7 +17,7 @@ AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 	:
 	BWindow(size, "AddWindow", B_MODAL_WINDOW, //B_NOT_V_RESIZABLE | 
 		B_ASYNCHRONOUS_CONTROLS |  B_AUTO_UPDATE_SIZE_LIMITS | B_CLOSE_ON_ESCAPE),
-	msgLooper(looper)
+	fMsgLooper(looper)
 {
 	fView = new BView("view", B_SUPPORTS_LAYOUT);
 	fView->SetExplicitMinSize(BSize(size.Width(), B_SIZE_UNSET));
@@ -66,7 +66,7 @@ AddRepoWindow::MessageReceived(BMessage* msg)
 				{
 					BMessage *addMsg = new BMessage(ADD_REPO_URL);
 					addMsg->AddString(key_url, url);
-					msgLooper->PostMessage(addMsg);
+					fMsgLooper->PostMessage(addMsg);
 					Quit();
 				}
 			}

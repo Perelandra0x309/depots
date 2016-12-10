@@ -75,8 +75,7 @@ DepotsApplication::DepotsApplication()
 	:
 	BApplication(kAppSignature)
 {
-	BRect mainWindowRect(50,50,80,80);
-	fWindow = new DepotsWindow(mainWindowRect);
+	fWindow = new DepotsWindow();
 }
 
 

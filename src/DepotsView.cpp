@@ -485,7 +485,7 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 	RepoRow *addedRow=NULL;
 	int32 index;
 	int32 listCount = fListView->CountRows();
-	// Find siblings
+	// Find matching URL or names
 	for(index=0; index < listCount; index++)
 	{
 		RepoRow *repoItem = (RepoRow*)(fListView->RowAt(index));

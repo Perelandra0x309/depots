@@ -231,8 +231,8 @@ TaskLooper::_UpdateStatus(BString text)
 TaskWindow::TaskWindow(BRect size, BLooper *looper, int32 what, BStringList params)
 	:
 	BWindow(size, "TaskWindow", B_MODAL_WINDOW, B_NOT_RESIZABLE | 
-		B_ASYNCHRONOUS_CONTROLS |  B_AUTO_UPDATE_SIZE_LIMITS | B_CLOSE_ON_ESCAPE),
-	msgLooper(looper)
+		B_ASYNCHRONOUS_CONTROLS |  B_AUTO_UPDATE_SIZE_LIMITS),
+	fMsgLooper(looper)
 {
 	fTaskLooper = new TaskLooper(what, params, this);
 	
@@ -293,7 +293,7 @@ TaskWindow::MessageReceived(BMessage* msg)
 			break;
 		}
 		case TASKS_COMPLETE: {
-			msgLooper->PostMessage(UPDATE_LIST);
+			fMsgLooper->PostMessage(UPDATE_LIST);
 			Quit();
 			break;
 		}
@@ -302,14 +302,14 @@ TaskWindow::MessageReceived(BMessage* msg)
 		//	fCancelButton->SetLabel(kOKLabel);
 		//	UpdateIfNeeded();
 		//	Unlock();
-			msgLooper->PostMessage(UPDATE_LIST);
+			fMsgLooper->PostMessage(UPDATE_LIST);
 			Quit();
 			break;
 		}
 		case CANCEL_BUTTON_PRESSED: {
 			if(fTaskLooper->QuitRequested())
 			{
-				msgLooper->PostMessage(UPDATE_LIST);
+				fMsgLooper->PostMessage(UPDATE_LIST);
 				Quit();
 			}
 			else
@@ -329,7 +329,7 @@ TaskWindow::MessageReceived(BMessage* msg)
 			fCancelButton->SetEnabled(true);
 			UpdateIfNeeded();
 			Unlock();
-			msgLooper->PostMessage(UPDATE_LIST);
+			fMsgLooper->PostMessage(UPDATE_LIST);
 			break;
 		}
 		default:

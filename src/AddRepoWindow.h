@@ -19,7 +19,7 @@ private:
 	BView					*fView;
 	BTextControl			*fText;
 	BButton					*fAddButton, *fCancelButton;
-	BLooper					*msgLooper;
+	BLooper					*fMsgLooper;
 };
 
 #endif
