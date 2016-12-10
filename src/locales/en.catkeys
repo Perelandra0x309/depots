@@ -1,11 +1,12 @@
-1	English	application/x-vnd.BH-Depots	275878709
+1	English	application/x-vnd.BH-Depots	3924484305
 The URL must start with a protocol, for example http:// or https://	AddRepoWindow	Add URL error message	The URL must start with a protocol, for example http:// or https://
 Add	AddRepoWindow	Button label	Add
 Depot URL:	AddRepoWindow	Text box label	Depot URL:
 Cancel	Constants	Button label	Cancel
 OK	Constants	Button label	OK
-Depots preflet Copyright © 2016 by Brian Hill	DepotsApplication	About box line 1	Depots preflet Copyright © 2016 by Brian Hill
-This preflet will enable and disable depots used in the HaikuDepot application.	DepotsApplication	About box line 2	This preflet will enable and disable depots used in the HaikuDepot application.
+Depots preflet version 1.0.0	DepotsApplication	About box line 1	Depots preflet version 1.0.0
+Copyright © 2016 by Brian Hill	DepotsApplication	About box line 2	Copyright © 2016 by Brian Hill
+This preflet will enable and disable depots used in the HaikuDepot application.	DepotsApplication	About box line 3	This preflet will enable and disable depots used in the HaikuDepot application.
 Disable	DepotsView	Button label	Disable
 Disable All	DepotsView	Button label	Disable All
 Enable	DepotsView	Button label	Enable

@@ -22,18 +22,16 @@ class RepoRow : public BRow {
 public:
 								RepoRow(const char* repo_name,
 									const char* repo_url, bool enabled);
-//	virtual						~RepoRow();
 		
 			const char*			Name() const { return fName.String(); }
 			void				SetName(const char *name);
 			const char*			Url() const { return fUrl.String(); }
-			void				SetHasSibling(bool value) { fHasSibling = value; }
 			void				SetEnabled(bool enabled);
 			bool				IsEnabled() { return fEnabled; }
 private:
 			BString				fName;
 			BString				fUrl;
-			bool				fHasSibling, fEnabled;
+			bool				fEnabled;
 };
 
 

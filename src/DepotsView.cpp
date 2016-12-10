@@ -29,8 +29,7 @@ RepoRow::RepoRow(const char* repo_name, const char* repo_url, bool enabled)
 	BRow(),
 	fName(repo_name),
 	fUrl(repo_url),
-	fEnabled(enabled),
-	fHasSibling(false)
+	fEnabled(enabled)
 {
 	SetField(new BStringField(""), kEnabledColumn);
 	SetField(new BStringField(fName.String()), kNameColumn);
@@ -100,7 +99,9 @@ DepotsView::DepotsView()
 	// ---Minimal buttons option---
 	font_height fontHeight;
 	GetFontHeight(&fontHeight);
-	int buttonSize = int(fontHeight.ascent + fontHeight.descent + 12);
+	int buttonSize = int(fontHeight.ascent + fontHeight.descent + 12); // button size determined by font size
+	
+	// Create button views with fixed size
 	BView *button1View = new BView("button1View", B_WILL_DRAW);
 	BRect btnSize(0,0,buttonSize,buttonSize);
 	fAddButton = new BButton(btnSize, "plus", "+", new BMessage(ADD_REPO_WINDOW));
@@ -127,7 +128,7 @@ DepotsView::DepotsView()
 			.AddGlue()
 			.Add(button3View, 0.0)
 		.End()
-		.AddStrut(3)//B_USE_DEFAULT_SPACING)
+		.AddStrut(3)
 		.Add(fListView, 1)
 		.AddGroup(B_HORIZONTAL, 0, 0.0)
 			// Add and Remove buttons
@@ -199,7 +200,12 @@ DepotsView::DepotsView()
 	
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
-		.Add(new BStringView("instruction", B_TRANSLATE_COMMENT("Select depots to use in HaikuDepot:", "Label text")))
+		.AddGroup(B_HORIZONTAL, 0, 0.0)
+			.Add(new BStringView("instruction", B_TRANSLATE_COMMENT("Select depots to use in HaikuDepot:", "Label text")), 0.0)
+			.AddGlue()
+			.Add(button3View, 0.0)
+		.End()
+		.AddStrut(3)
 		.Add(fListView)
 		.AddGroup(B_HORIZONTAL)
 			.Add(fAddButton)
@@ -476,9 +482,7 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 	if(url.FindFirst("://") == B_ERROR)
 		return NULL;
 //	printf("Adding:%s:%s\n", name.String(), url.String());
-//	RepoRow *newRepo = new RepoRow(name, url, enabled);
 	RepoRow *addedRow=NULL;
-//	bool foundSibling = false;
 	int32 index;
 	int32 listCount = fListView->CountRows();
 	// Find siblings
@@ -496,9 +500,6 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 		else if(name.Compare(repoItem->Name()) == 0)
 		{	
 			repoItem->SetEnabled(false);
-//			repoItem->SetHasSibling(true);
-//			if(addedRow)
-//				addedRow->SetHasSibling(true);
 		}
 
 	}

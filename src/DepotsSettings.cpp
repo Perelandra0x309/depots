@@ -43,7 +43,7 @@ DepotsSettings::GetFrame()
 	BMessage settings(_ReadFromFile());
 	BRect frame;
 	status_t status = settings.FindRect(key_frame, &frame);
-	// Set deafault off screen so it will center itself
+	// Set default off screen so it will center itself
 	if(status != B_OK)
 		frame.Set(-10, -10, 750, 300);
 	return frame;

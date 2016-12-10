@@ -83,10 +83,10 @@ DepotsApplication::DepotsApplication()
 void
 DepotsApplication::AboutRequested()
 {
-	BString text(B_TRANSLATE_COMMENT("Depots preflet Copyright © 2016 by Brian Hill", "About box line 1"));
-	text.Append("\n\n");
-	text.Append(B_TRANSLATE_COMMENT("This preflet will enable and disable depots "\
-								"used in the HaikuDepot application.", "About box line 2"));
+	BString text(B_TRANSLATE_COMMENT("Depots preflet version 1.0.0", "About box line 1"));
+	text.Append("\n").Append(B_TRANSLATE_COMMENT("Copyright © 2016 by Brian Hill", "About box line 2"));
+	text.Append("\n\n").Append(B_TRANSLATE_COMMENT("This preflet will enable and disable depots "\
+								"used in the HaikuDepot application.", "About box line 3"));
 	BAlert *aboutAlert = new BAlert("About", text, kOKLabel);
 	aboutAlert->SetFlags(aboutAlert->Flags() | B_CLOSE_ON_ESCAPE);
 	// Add clickable URL
