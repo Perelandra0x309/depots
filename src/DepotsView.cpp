@@ -99,26 +99,19 @@ DepotsView::DepotsView()
 	// ---Minimal buttons option---
 	font_height fontHeight;
 	GetFontHeight(&fontHeight);
-	int buttonSize = int(fontHeight.ascent + fontHeight.descent + 12); // button size determined by font size
+	int buttonHeight = int(fontHeight.ascent + fontHeight.descent + 12); // button size determined by font size
+	BSize btnSize(buttonHeight,buttonHeight);
 	
 	// Create button views with fixed size
-	BView *button1View = new BView("button1View", B_WILL_DRAW);
-	BRect btnSize(0,0,buttonSize,buttonSize);
-	fAddButton = new BButton(btnSize, "plus", "+", new BMessage(ADD_REPO_WINDOW));
-	button1View->SetExplicitMinSize(BSize(buttonSize, buttonSize));
+	fAddButton = new BButton("plus", "+", new BMessage(ADD_REPO_WINDOW));
+	fAddButton->SetExplicitSize(btnSize);
 	
-	BView *button2View = new BView("button2View", B_WILL_DRAW);
-	fRemoveButton = new BButton(btnSize, "minus", "-", new BMessage(REMOVE_REPOS));
+	fRemoveButton = new BButton("minus", "-", new BMessage(REMOVE_REPOS));
 	fRemoveButton->SetEnabled(false);
-	button2View->SetExplicitMinSize(BSize(buttonSize, buttonSize));
+	fRemoveButton->SetExplicitSize(btnSize);
 	
-	BView *button3View = new BView("button3View", B_WILL_DRAW);
-	BButton *aboutButton = new BButton(btnSize, "about", "?", new BMessage(SHOW_ABOUT));
-	button3View->SetExplicitMinSize(BSize(buttonSize, buttonSize));
-	
-	button1View->AddChild(fAddButton);
-	button2View->AddChild(fRemoveButton);
-	button3View->AddChild(aboutButton);
+	fAboutButton = new BButton("about", "?", new BMessage(SHOW_ABOUT));
+	fAboutButton->SetExplicitSize(btnSize);
 	
 	int buttonSpacing = 1;
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
@@ -126,7 +119,7 @@ DepotsView::DepotsView()
 		.AddGroup(B_HORIZONTAL, 0, 0.0)
 			.Add(new BStringView("instruction", B_TRANSLATE_COMMENT("Select depots to use in HaikuDepot:", "Label text")), 0.0)
 			.AddGlue()
-			.Add(button3View, 0.0)
+			.Add(fAboutButton, 0.0)
 		.End()
 		.AddStrut(3)
 		.Add(fListView, 1)
@@ -137,9 +130,9 @@ DepotsView::DepotsView()
 					.Add(new BSeparatorView(B_VERTICAL))
 					.AddGroup(B_VERTICAL, 0, 0.0)
 						.AddGroup(B_HORIZONTAL, buttonSpacing, 0.0)
-							.SetInsets(buttonSpacing,buttonSpacing,buttonSpacing,buttonSpacing+1)
-							.Add(button1View)
-							.Add(button2View)
+							.SetInsets(buttonSpacing)
+							.Add(fAddButton)
+							.Add(fRemoveButton)
 						.End()
 						.Add(new BSeparatorView(B_HORIZONTAL))
 					.End()
@@ -193,17 +186,24 @@ DepotsView::DepotsView()
 #else
 	
 		// ---Standard buttons option---
+	font_height fontHeight;
+	GetFontHeight(&fontHeight);
+	int buttonSize = int(fontHeight.ascent + fontHeight.descent + 12); // button size determined by font size
+	
 	fAddButton = new BButton(B_TRANSLATE_COMMENT("Add" B_UTF8_ELLIPSIS, "Button label"),
 							new BMessage(ADD_REPO_WINDOW));
 	fRemoveButton = new BButton(fLabelRemove, new BMessage(REMOVE_REPOS));
 	fRemoveButton->SetEnabled(false);
+	
+	fAboutButton = new BButton("about", "?", new BMessage(SHOW_ABOUT));
+	fAboutButton->SetExplicitSize(BSize(buttonSize, buttonSize));
 	
 	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
 		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
 		.AddGroup(B_HORIZONTAL, 0, 0.0)
 			.Add(new BStringView("instruction", B_TRANSLATE_COMMENT("Select depots to use in HaikuDepot:", "Label text")), 0.0)
 			.AddGlue()
-			.Add(button3View, 0.0)
+			.Add(fAboutButton, 0.0)
 		.End()
 		.AddStrut(3)
 		.Add(fListView)

@@ -47,7 +47,7 @@ private:
 	BPath					fPkgmanListOut;
 	DepotsSettings			fSettings;
 	BColumnListView			*fListView;
-	BButton					*fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
+	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
 	BString					fTitleEnabled, fTitleName, fTitleUrl,
 							fLabelRemove, fLabelRemoveAll,
 							fLabelEnable, fLabelDisable, fLabelEnableAll, fLabelDisableAll;
