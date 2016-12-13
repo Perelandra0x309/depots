@@ -2,6 +2,7 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
+#include <Alert.h>
 #include <Application.h>
 #include <Catalog.h>
 #include <FindDirectory.h>
@@ -102,6 +103,15 @@ DepotsWindow::_StopWatching()
 bool
 DepotsWindow::QuitRequested()
 {
+	if(fView->IsTaskRunning())
+	{
+		int32 result = (new BAlert("tasks", B_TRANSLATE_COMMENT("Tasks are still running. Stop tasks "
+										"and quit?", "Alert message"),
+										"No", "Yes", NULL,
+										B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
+		if(result == 0)
+			return false;
+	}
 	fSettings.SetFrame(Frame());
 	be_app->PostMessage(B_QUIT_REQUESTED);
 	return BWindow::QuitRequested();

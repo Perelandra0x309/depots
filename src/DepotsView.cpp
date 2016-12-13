@@ -130,6 +130,23 @@ DepotsView::DepotsView()
 	BMessage *invokeMsg = new BMessage(ITEM_INVOKED);
 	fListView->SetInvocationMessage(invokeMsg);
 	
+	BView *statusView = new BView("status", B_SUPPORTS_LAYOUT);
+	BStringView *testView = new BStringView("test", "Status: Testing.....");
+//	BButton *testButton = new BButton("testbutton", "x", NULL);
+//	testButton->SetExplicitSize(BSize(18,13));
+	BLayoutBuilder::Group<>(statusView, B_VERTICAL, 0)
+		.SetInsets(0,-2,0,0)
+		.AddGroup(B_HORIZONTAL, 1)
+			.Add(new BSeparatorView(B_VERTICAL))
+			.Add(testView)
+	//		.Add(testButton)
+	//		.AddGlue()
+		.End()
+		// This seperator and the SetInsets above prevents a blue line from showing when the listview is the focus
+		.Add(new BSeparatorView(B_HORIZONTAL));
+	fListView->AddStatusView(statusView);
+	
+	
 	fEnableButton = new BButton(fLabelEnable, new BMessage(ENABLE_BUTTON_PRESSED));
 	fDisableButton = new BButton(fLabelDisable, new BMessage(DISABLE_BUTTON_PRESSED));
 	
