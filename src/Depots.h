@@ -16,6 +16,7 @@
 class URLView : public BStringView {
 public:
 							URLView(const char *name, const char *url);
+	virtual void			DetachedFromWindow();
 	virtual void			MouseMoved(BPoint where, uint32 code, const BMessage *dragMessage);
 	virtual void			MouseDown(BPoint point);
 	virtual void			Draw(BRect bounds);

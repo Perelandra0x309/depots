@@ -26,6 +26,17 @@ URLView::URLView(const char *name, const char *url)
 
 
 void
+URLView::DetachedFromWindow()
+{
+	if(fMouseOver)
+	{
+		BCursor cursor(B_CURSOR_ID_SYSTEM_DEFAULT);
+		be_app->SetCursor(&cursor);
+	}
+}
+
+
+void
 URLView::MouseMoved(BPoint where, uint32 code, const BMessage *dragMessage)
 {
 	switch(code)
