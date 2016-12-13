@@ -125,7 +125,9 @@ DepotsWindow::MessageReceived(BMessage* msg)
 			break;
 		}
 		case LIST_SELECTION_CHANGED: 
-		case UPDATE_LIST: {
+		case UPDATE_LIST:
+		case TASKS_COMPLETE_WITH_ERRORS:
+		case TASKS_COMPLETE: {
 			fView->MessageReceived(msg);
 			break;
 		}
@@ -134,6 +136,10 @@ DepotsWindow::MessageReceived(BMessage* msg)
 			break;
 		}
 		case B_NODE_MONITOR: { // captures pkgman changes while Depots application is running
+			// This app is making changes, so ignore this message
+			if(fView->IsTaskRunning())
+				break;
+			
 			int32 opcode;
 			if (msg->FindInt32("opcode", &opcode) == B_OK)
 			{	switch (opcode)

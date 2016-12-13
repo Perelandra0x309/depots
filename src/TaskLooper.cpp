@@ -1,27 +1,26 @@
-/* TaskWindow.cpp
+/* TaskLooper.cpp
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
 #include <Alert.h>
 #include <Catalog.h>
 #include <FindDirectory.h>
-#include <LayoutBuilder.h>
 #include <MessageQueue.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 #include "constants.h"
 #include "ErrorAlert.h"
-#include "TaskWindow.h"
+#include "TaskLooper.h"
 
 #undef B_TRANSLATION_CONTEXT
-#define B_TRANSLATION_CONTEXT "TaskWindow"
+#define B_TRANSLATION_CONTEXT "TaskLooper"
 
 
-TaskLooper::TaskLooper(int32 what, BStringList params, BLooper *target)
+TaskLooper::TaskLooper(BLooper *target)
 	:BLooper(),
-	fWhat(what),
-	fParams(params),
+	fWhat(NO_TASKS),
+	fParams(),
 	fMsgTarget(target),
 	fQuitWasRequested(false),
 	fOutfileInit(B_ERROR)
@@ -61,6 +60,14 @@ TaskLooper::MessageReceived(BMessage *msg)
 			break;
 		}
 	}
+}
+
+
+void
+TaskLooper::SetTasks(int32 what, BStringList params)
+{
+	fWhat = what;
+	fParams = params;
 }
 
 
@@ -179,21 +186,10 @@ TaskLooper::_DoTasks()
 	int32 errorCount = erroredParams.CountStrings();
 	if(errorCount==0)
 	{
-	//	_UpdateStatus(B_TRANSLATE_COMMENT("Completed tasks", "Status message"));
 		fMsgTarget->PostMessage(TASKS_COMPLETE);
 	}
 	else
 	{
-	/*	BString finalText;
-		if(errorCount==1)
-			finalText.SetTo(B_TRANSLATE_COMMENT("Completed tasks with 1 error", "Status message"));
-		else
-			finalText.SetTo(B_TRANSLATE_COMMENT("Completed tasks with %total% errors", "Status message, do not translate %total%"));
-		BString total;
-		total<<errorCount;
-		finalText.ReplaceFirst("%total%", total);
-		_UpdateStatus(finalText);*/
-		
 		// Error alert
 		BString errorText;
 		switch(fWhat){
@@ -225,114 +221,4 @@ TaskLooper::_UpdateStatus(BString text)
 	BMessage msg(UPDATE_STATUS);
 	msg.AddString(key_text, text);
 	fMsgTarget->PostMessage(&msg);
-}
-
-
-TaskWindow::TaskWindow(BRect size, BLooper *looper, int32 what, BStringList params)
-	:
-	BWindow(size, "TaskWindow", B_MODAL_WINDOW, B_NOT_RESIZABLE | 
-		B_ASYNCHRONOUS_CONTROLS |  B_AUTO_UPDATE_SIZE_LIMITS),
-	fMsgLooper(looper)
-{
-	fTaskLooper = new TaskLooper(what, params, this);
-	
-	fView = new BView("view", B_WILL_DRAW | B_SUPPORTS_LAYOUT);
-	fView->SetExplicitMinSize(BSize(size.Width(), B_SIZE_UNSET));
-	fStatus = new BStatusBar("statusbar", "");
-	fStatus->SetMaxValue(params.CountStrings()+1);
-	fStatus->SetTo(0, " ");
-	fCancelButton = new BButton(kCancelLabel, new BMessage(CANCEL_BUTTON_PRESSED));
-	
-	BLayoutBuilder::Group<>(fView, B_VERTICAL)
-		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
-		.Add(fStatus)
-		.AddGroup(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
-			.AddGlue()
-			.Add(fCancelButton);
-	BLayoutBuilder::Group<>(this).Add(fView);
-	
-	// Location on screen
-	MoveTo(size.left + 20, size.top + 20);
-	Show();
-}
-
-
-TaskWindow::~TaskWindow()
-{
-	fTaskLooper->Lock();
-	fTaskLooper->Quit();
-}
-
-
-void
-TaskWindow::MessageReceived(BMessage* msg)
-{
-	switch(msg->what)
-	{
-		case DO_TASKS: {
-			Lock();
-			fStatus->SetTo(0, " ");
-			UpdateIfNeeded();
-			Unlock();
-			fTaskLooper->PostMessage(DO_TASKS);
-			break;
-		}
-		case UPDATE_STATUS: {
-			BString statusText;
-			status_t status = msg->FindString(key_text, &statusText);
-			if(status == B_OK)
-			{
-				Lock();
-				fStatus->Update(1, statusText);
-				// Disable button if we are on the last task
-			//	if(fStatus->CurrentValue() == fStatus->MaxValue() - 1)
-			//		fCancelButton->SetEnabled(false);
-				UpdateIfNeeded();
-				Unlock();
-			}
-			break;
-		}
-		case TASKS_COMPLETE: {
-			fMsgLooper->PostMessage(UPDATE_LIST);
-			Quit();
-			break;
-		}
-		case TASKS_COMPLETE_WITH_ERRORS: {
-		//	Lock();
-		//	fCancelButton->SetLabel(kOKLabel);
-		//	UpdateIfNeeded();
-		//	Unlock();
-			fMsgLooper->PostMessage(UPDATE_LIST);
-			Quit();
-			break;
-		}
-		case CANCEL_BUTTON_PRESSED: {
-			if(fTaskLooper->QuitRequested())
-			{
-				fMsgLooper->PostMessage(UPDATE_LIST);
-				Quit();
-			}
-			else
-			{
-				Lock();
-				fStatus->SetTo(fStatus->MaxValue(), B_TRANSLATE_COMMENT("Canceling tasks, please wait" B_UTF8_ELLIPSIS, "Status bar text"));
-				fCancelButton->SetEnabled(false);
-				UpdateIfNeeded();
-				Unlock();
-			}
-			break;
-		}
-		case TASKS_CANCELED: {
-			Lock();
-			fStatus->SetTo(fStatus->MaxValue(), B_TRANSLATE_COMMENT("Successfully canceled remaining tasks", "Status bar text"));
-			fCancelButton->SetLabel(kOKLabel);
-			fCancelButton->SetEnabled(true);
-			UpdateIfNeeded();
-			Unlock();
-			fMsgLooper->PostMessage(UPDATE_LIST);
-			break;
-		}
-		default:
-			BWindow::MessageReceived(msg);
-	}
 }

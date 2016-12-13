@@ -18,7 +18,6 @@
 
 #include "constants.h"
 #include "DepotsView.h"
-#include "TaskWindow.h"
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "DepotsView"
@@ -40,26 +39,39 @@ RepoRow::RepoRow(const char* repo_name, const char* repo_url, bool enabled)
 
 
 void
-RepoRow::SetEnabled(bool enabled)
-{
-	BStringField *field = (BStringField*)GetField(kEnabledColumn);
-	field->SetString(enabled ? "√" : "");
-	fEnabled = enabled; 
-}
-
-
-void
 RepoRow::SetName(const char *name)
 {
 	BStringField *field = (BStringField*)GetField(kNameColumn);
 	field->SetString(name);
-	fName.SetTo(name); 
+	fName.SetTo(name);
+	Invalidate();
+}
+
+
+void
+RepoRow::SetEnabled(bool enabled)
+{
+	BStringField *field = (BStringField*)GetField(kEnabledColumn);
+	field->SetString(enabled ? "√" : "");
+	fEnabled = enabled;
+	Invalidate();
+}
+
+
+void
+RepoRow::SetPendingTaskCompletion()
+{
+	BStringField *field = (BStringField*)GetField(kEnabledColumn);
+	field->SetString(B_UTF8_ELLIPSIS);
+	Invalidate();
 }
 
 
 DepotsView::DepotsView()
 	:
 	BView("depotsview", B_SUPPORTS_LAYOUT),
+	fTaskLooper(NULL),
+	fIsTaskRunning(false),
 	fTitleEnabled(B_TRANSLATE_COMMENT("Enabled", "Column title")),
 	fTitleName(B_TRANSLATE_COMMENT("Name", "Column title")),
 	fTitleUrl(B_TRANSLATE_COMMENT("URL", "Column title")),
@@ -222,6 +234,11 @@ DepotsView::DepotsView()
 
 DepotsView::~DepotsView()
 {
+	if(fTaskLooper)
+	{
+		fTaskLooper->Lock();
+		fTaskLooper->Quit();
+	}
 	Clean();
 }
 
@@ -234,6 +251,13 @@ DepotsView::AllAttached()
 	fEnableButton->SetTarget(this);
 	fDisableButton->SetTarget(this);
 	_InitList();
+}
+
+
+void
+DepotsView::AttachedToWindow()
+{
+	fTaskLooper = new TaskLooper(Window());
 }
 
 
@@ -269,6 +293,7 @@ DepotsView::MessageReceived(BMessage* msg)
 				if(rowItem->IsSelected() && !rowItem->IsEnabled())
 				{
 					params.Add(rowItem->Url());
+					rowItem->SetPendingTaskCompletion();
 					// Check if there are multiple selections of the same depot, pkgman won't like that
 					if(names.HasString(rowItem->Name()))
 					{
@@ -285,8 +310,10 @@ DepotsView::MessageReceived(BMessage* msg)
 			}
 			if(paramsOK)
 			{
-				TaskWindow *win = new TaskWindow(Window()->Frame(), this->Looper(), msg->what, params);
-				win->PostMessage(DO_TASKS);
+				fTaskLooper->SetTasks(msg->what, params);
+				fIsTaskRunning = true;
+				fTaskLooper->PostMessage(DO_TASKS);
+				
 			}
 			break;
 		}
@@ -299,10 +326,21 @@ DepotsView::MessageReceived(BMessage* msg)
 			{
 				RepoRow* rowItem = (RepoRow*)fListView->RowAt(index);
 				if(rowItem->IsSelected() && rowItem->IsEnabled())
+				{
 					params.Add(rowItem->Name());
+					rowItem->SetPendingTaskCompletion();
+				}
 			}
-			TaskWindow *win = new TaskWindow(Window()->Frame(), this->Looper(), msg->what, params);
-			win->PostMessage(DO_TASKS);
+			fTaskLooper->SetTasks(msg->what, params);
+			fIsTaskRunning = true;
+			fTaskLooper->PostMessage(DO_TASKS);
+			break;
+		}
+		case TASKS_COMPLETE_WITH_ERRORS:
+		case TASKS_COMPLETE: {
+			fIsTaskRunning = false;
+			_UpdatePkgmanList(true);
+			_UpdateButtons();
 			break;
 		}
 		case UPDATE_LIST: {

@@ -11,6 +11,7 @@
 #include <View.h>
 
 #include "DepotsSettings.h"
+#include "TaskLooper.h"
 
 enum {
 	kEnabledColumn,
@@ -28,6 +29,7 @@ public:
 			const char*			Url() const { return fUrl.String(); }
 			void				SetEnabled(bool enabled);
 			bool				IsEnabled() { return fEnabled; }
+			void				SetPendingTaskCompletion();
 private:
 			BString				fName;
 			BString				fUrl;
@@ -40,13 +42,17 @@ public:
 							DepotsView();
 							~DepotsView();
 	virtual void			AllAttached();
+	virtual void			AttachedToWindow();
 	virtual void			MessageReceived(BMessage*);
 	status_t				Clean();
 	void					AddManualRepository(BString url);
+	bool					IsTaskRunning() { return fIsTaskRunning; }
 private:
 	BPath					fPkgmanListOut;
 	DepotsSettings			fSettings;
 	BColumnListView			*fListView;
+	TaskLooper				*fTaskLooper;
+	bool					fIsTaskRunning;
 	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
 	BString					fTitleEnabled, fTitleName, fTitleUrl,
 							fLabelRemove, fLabelRemoveAll,
