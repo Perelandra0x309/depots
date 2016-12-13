@@ -62,12 +62,21 @@ TaskLooper::MessageReceived(BMessage *msg)
 	}
 }
 
-
+// TODO remove?
 void
 TaskLooper::SetTasks(int32 what, BStringList params)
 {
 	fWhat = what;
 	fParams = params;
+}
+
+
+void
+TaskLooper::SetTask(int32 what, BString param)
+{
+	fWhat = what;
+	fParams.MakeEmpty();
+	fParams.Add(param);
 }
 
 
@@ -217,8 +226,9 @@ TaskLooper::_DoTasks()
 void
 TaskLooper::_UpdateStatus(BString text)
 {
-	// send message to window
-	BMessage msg(UPDATE_STATUS);
+	// TODO send message to window
+	
+	/*BMessage msg(UPDATE_STATUS);
 	msg.AddString(key_text, text);
-	fMsgTarget->PostMessage(&msg);
+	fMsgTarget->PostMessage(&msg);*/
 }

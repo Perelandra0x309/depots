@@ -124,8 +124,7 @@ DepotsWindow::MessageReceived(BMessage* msg)
 				fView->AddManualRepository(url);
 			break;
 		}
-		case LIST_SELECTION_CHANGED: 
-		case UPDATE_LIST:
+//		case UPDATE_LIST:
 		case TASKS_COMPLETE_WITH_ERRORS:
 		case TASKS_COMPLETE: {
 			fView->MessageReceived(msg);

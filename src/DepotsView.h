@@ -7,6 +7,7 @@
 
 #include <ColumnListView.h>
 #include <GroupView.h>
+#include <ObjectList.h>
 #include <String.h>
 #include <View.h>
 
@@ -29,11 +30,14 @@ public:
 			const char*			Url() const { return fUrl.String(); }
 			void				SetEnabled(bool enabled);
 			bool				IsEnabled() { return fEnabled; }
-			void				SetPendingTaskCompletion();
+//			void				SetPendingTaskCompletion();
+			void				SetTaskState(uint32 state);
+			uint32				TaskState() { return fTaskState; }
 private:
 			BString				fName;
 			BString				fUrl;
 			bool				fEnabled;
+			uint32				fTaskState;
 };
 
 
@@ -44,7 +48,6 @@ public:
 	virtual void			AllAttached();
 	virtual void			AttachedToWindow();
 	virtual void			MessageReceived(BMessage*);
-	status_t				Clean();
 	void					AddManualRepository(BString url);
 	bool					IsTaskRunning() { return fIsTaskRunning; }
 private:
@@ -57,7 +60,20 @@ private:
 	BString					fTitleEnabled, fTitleName, fTitleUrl,
 							fLabelRemove, fLabelRemoveAll,
 							fLabelEnable, fLabelDisable, fLabelEnableAll, fLabelDisableAll;
+	// Message helpers
+	void					_AddSelectedRowsToQueue();
+	void					_StartNextTask();
+	void					_CompleteRunningTask(bool noErrors);
+	
+	// Task queue model
+	BObjectList<RepoRow>	fTaskQueue;
+	void					_ModelAddToTaskQueue(RepoRow* row);
+	RepoRow*				_ModelGetNextTask();
+	RepoRow*				_ModelCompleteTask(bool noErrors);
+	
+	// GUI functions
 	BString					_GetRootUrl(BString url);
+	status_t				_Clean();
 	void					_InitList();
 	void					_UpdatePkgmanList(bool updateStatusOnly=false);
 	void					_SaveList();

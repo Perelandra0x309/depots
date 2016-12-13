@@ -28,7 +28,8 @@ RepoRow::RepoRow(const char* repo_name, const char* repo_url, bool enabled)
 	BRow(),
 	fName(repo_name),
 	fUrl(repo_url),
-	fEnabled(enabled)
+	fEnabled(enabled),
+	fTaskState(STATE_NOT_IN_QUEUE)
 {
 	SetField(new BStringField(""), kEnabledColumn);
 	SetField(new BStringField(fName.String()), kNameColumn);
@@ -57,13 +58,38 @@ RepoRow::SetEnabled(bool enabled)
 	Invalidate();
 }
 
-
+/*
 void
 RepoRow::SetPendingTaskCompletion()
 {
 	BStringField *field = (BStringField*)GetField(kEnabledColumn);
 	field->SetString(B_UTF8_ELLIPSIS);
 	Invalidate();
+}*/
+
+
+void
+RepoRow::SetTaskState(uint32 state)
+{
+	fTaskState = state;
+	switch(state)
+	{
+		case STATE_IN_QUEUE_WAITING: {
+			BStringField *field = (BStringField*)GetField(kEnabledColumn);
+			field->SetString(B_UTF8_ELLIPSIS);
+			Invalidate();
+			break;
+		}
+	/*	case STATE_IN_QUEUE_RUNNING: {
+			BStringField *field = (BStringField*)GetField(kEnabledColumn);
+			if(IsEnabled())
+				field->SetString(B_TRANSLATE("Disabling..."));
+			else
+				field->SetString(B_TRANSLATE("Enabling..."));
+			Invalidate();
+			break;
+		}*/
+	}
 }
 
 
@@ -101,11 +127,11 @@ DepotsView::DepotsView()
 		B_TRUNCATE_END), kNameColumn);
 	fListView->AddColumn(new BStringColumn(fTitleUrl, 500, col2width, 5000,
 		B_TRUNCATE_END), kUrlColumn);
+	BMessage *invokeMsg = new BMessage(ITEM_INVOKED);
+	fListView->SetInvocationMessage(invokeMsg);
 	
 	fEnableButton = new BButton(fLabelEnable, new BMessage(ENABLE_BUTTON_PRESSED));
 	fDisableButton = new BButton(fLabelDisable, new BMessage(DISABLE_BUTTON_PRESSED));
-	fEnableButton->SetEnabled(false);
-	fDisableButton->SetEnabled(false);
 	
 #if USE_MINIMAL_BUTTONS
 	// ---Minimal buttons option---
@@ -119,7 +145,6 @@ DepotsView::DepotsView()
 	fAddButton->SetExplicitSize(btnSize);
 	
 	fRemoveButton = new BButton("minus", "-", new BMessage(REMOVE_REPOS));
-	fRemoveButton->SetEnabled(false);
 	fRemoveButton->SetExplicitSize(btnSize);
 	
 	fAboutButton = new BButton("about", "?", new BMessage(SHOW_ABOUT));
@@ -205,7 +230,6 @@ DepotsView::DepotsView()
 	fAddButton = new BButton(B_TRANSLATE_COMMENT("Add" B_UTF8_ELLIPSIS, "Button label"),
 							new BMessage(ADD_REPO_WINDOW));
 	fRemoveButton = new BButton(fLabelRemove, new BMessage(REMOVE_REPOS));
-	fRemoveButton->SetEnabled(false);
 	
 	fAboutButton = new BButton("about", "?", new BMessage(SHOW_ABOUT));
 	fAboutButton->SetExplicitSize(BSize(buttonSize, buttonSize));
@@ -239,7 +263,7 @@ DepotsView::~DepotsView()
 		fTaskLooper->Lock();
 		fTaskLooper->Quit();
 	}
-	Clean();
+	_Clean();
 }
 
 
@@ -250,6 +274,10 @@ DepotsView::AllAttached()
 	fRemoveButton->SetTarget(this);
 	fEnableButton->SetTarget(this);
 	fDisableButton->SetTarget(this);
+	fListView->SetTarget(this);
+	fRemoveButton->SetEnabled(false);
+	fEnableButton->SetEnabled(false);
+	fDisableButton->SetEnabled(false);
 	_InitList();
 }
 
@@ -281,20 +309,25 @@ DepotsView::MessageReceived(BMessage* msg)
 			_UpdateButtons();
 			break;
 		}
+		case ITEM_INVOKED: {
+			if(fEnableButton->IsEnabled())
+				MessageReceived(new BMessage(ENABLE_BUTTON_PRESSED));
+			else if(fDisableButton->IsEnabled())
+				MessageReceived(new BMessage(DISABLE_BUTTON_PRESSED));
+			break;
+		}
 		case ENABLE_BUTTON_PRESSED: {
-			BStringList params, names;
+			BStringList names;
 			int32 index;
 			int32 count = fListView->CountRows();
 			bool paramsOK = true;
-			// Add repository name of each selected item that is disabled in pkgman
+			// Check if there are multiple selections of the same depot, pkgman won't like that
+			// TODO iterator of selected rows?
 			for(index=0; index < count; index++)
 			{
 				RepoRow* rowItem = (RepoRow*)fListView->RowAt(index);
-				if(rowItem->IsSelected() && !rowItem->IsEnabled())
+				if(rowItem->IsSelected())
 				{
-					params.Add(rowItem->Url());
-					rowItem->SetPendingTaskCompletion();
-					// Check if there are multiple selections of the same depot, pkgman won't like that
 					if(names.HasString(rowItem->Name()))
 					{
 						(new BAlert("duplicate", B_TRANSLATE_COMMENT("You can only enable one URL for "
@@ -310,15 +343,14 @@ DepotsView::MessageReceived(BMessage* msg)
 			}
 			if(paramsOK)
 			{
-				fTaskLooper->SetTasks(msg->what, params);
-				fIsTaskRunning = true;
-				fTaskLooper->PostMessage(DO_TASKS);
-				
+				_AddSelectedRowsToQueue();
+				_StartNextTask();
+				_UpdateButtons();
 			}
 			break;
 		}
 		case DISABLE_BUTTON_PRESSED: {
-			BStringList params;
+		/*	BStringList params;
 			int32 index;
 			int32 count = fListView->CountRows();
 			// Add repository name of each selected item that is enabled in pkgman
@@ -333,13 +365,22 @@ DepotsView::MessageReceived(BMessage* msg)
 			}
 			fTaskLooper->SetTasks(msg->what, params);
 			fIsTaskRunning = true;
-			fTaskLooper->PostMessage(DO_TASKS);
+			fTaskLooper->PostMessage(DO_TASKS);*/
+			_AddSelectedRowsToQueue();
+			_StartNextTask();
+			_UpdateButtons();
 			break;
 		}
-		case TASKS_COMPLETE_WITH_ERRORS:
+		case TASKS_COMPLETE_WITH_ERRORS: {
+			_CompleteRunningTask(false);
+			_StartNextTask();
+			_UpdateButtons();
+			break;
+		}
 		case TASKS_COMPLETE: {
-			fIsTaskRunning = false;
-			_UpdatePkgmanList(true);
+			_CompleteRunningTask(true);
+			_StartNextTask();
+//			_UpdatePkgmanList(true);
 			_UpdateButtons();
 			break;
 		}
@@ -354,15 +395,89 @@ DepotsView::MessageReceived(BMessage* msg)
 }
 
 
-status_t
-DepotsView::Clean()
+void
+DepotsView::_AddSelectedRowsToQueue()
 {
-	BRow* row;
-	while ((row = fListView->RowAt((int32)0, NULL)) != NULL) {
-		fListView->RemoveRow(row);
-		delete row;
+	int32 index, count = fListView->CountRows();
+	// Add repository name of each selected item that is enabled in pkgman
+	for(index=0; index < count; index++)
+	{
+		// TODO detect next selected row by current selection?
+		RepoRow* rowItem = (RepoRow*)fListView->RowAt(index);
+		if(rowItem->IsSelected())
+			_ModelAddToTaskQueue(rowItem);
 	}
-	return B_OK;
+}
+
+
+void
+DepotsView::_StartNextTask()
+{
+	// If tasks are not already running, kick them off
+	if(!fIsTaskRunning)
+	{
+		RepoRow* row = _ModelGetNextTask();
+		if(row != NULL)
+		{
+			if(row->IsEnabled())
+				fTaskLooper->SetTask(DISABLE_BUTTON_PRESSED, row->Name());
+			else
+				fTaskLooper->SetTask(ENABLE_BUTTON_PRESSED, row->Url());
+			fIsTaskRunning = true;
+			fTaskLooper->PostMessage(DO_TASKS);
+		}
+	}
+}
+
+
+void
+DepotsView::_CompleteRunningTask(bool noErrors)
+{
+	if(fIsTaskRunning)
+	{
+		RepoRow* row = _ModelCompleteTask(noErrors);
+		if(row != NULL)
+			fIsTaskRunning = false;
+	}
+}
+
+
+void
+DepotsView::_ModelAddToTaskQueue(RepoRow* row)
+{
+	fTaskQueue.AddItem(row);
+	row->SetTaskState(STATE_IN_QUEUE_WAITING);
+}
+
+
+RepoRow*
+DepotsView::_ModelGetNextTask()
+{
+	if(!fTaskQueue.IsEmpty())
+	{
+		RepoRow* row = fTaskQueue.ItemAt(0);
+		row->SetTaskState(STATE_IN_QUEUE_RUNNING);
+		return row;
+	}
+	else
+		return NULL;
+}
+
+
+RepoRow*
+DepotsView::_ModelCompleteTask(bool noErrors)
+{
+	if(!fTaskQueue.IsEmpty())
+	{
+		RepoRow* row = fTaskQueue.ItemAt(0);
+		row->SetTaskState(STATE_NOT_IN_QUEUE);
+		if(noErrors)
+			row->SetEnabled(!row->IsEnabled());
+		fTaskQueue.RemoveItemAt(0);
+		return row;
+	}
+	else
+		return NULL;
 }
 
 
@@ -417,6 +532,18 @@ DepotsView::_GetRootUrl(BString url)
 		return url;
 	else
 		return url.Truncate(rootEnd);
+}
+
+
+status_t
+DepotsView::_Clean()
+{
+	BRow* row;
+	while ((row = fListView->RowAt((int32)0, NULL)) != NULL) {
+		fListView->RemoveRow(row);
+		delete row;
+	}
+	return B_OK;
 }
 
 
@@ -557,7 +684,7 @@ DepotsView::_UpdateButtons()
 	// At least one row is selected
 	if(rowItem)
 	{
-		bool someAreEnabled = false, someAreDisabled = false;
+		bool someAreEnabled = false, someAreDisabled = false, someAreInQueue = false;
 		int32 index, selectedCount=0;
 		int32 count = fListView->CountRows();
 		for(index=0; index < count; index++)
@@ -566,6 +693,14 @@ DepotsView::_UpdateButtons()
 			if(rowItem->IsSelected())
 			{
 				selectedCount++;
+				switch(rowItem->TaskState())
+				{
+					case STATE_IN_QUEUE_WAITING:
+					case STATE_IN_QUEUE_RUNNING: {
+						someAreInQueue = true;
+						break;
+					}
+				}
 				if(rowItem->IsEnabled())
 					someAreEnabled = true;
 				else
@@ -590,8 +725,8 @@ DepotsView::_UpdateButtons()
 			fDisableButton->SetLabel(fLabelDisable);
 		}
 		// Set which buttons should be enabled
-		fRemoveButton->SetEnabled(!someAreEnabled);
-		if(someAreEnabled && someAreDisabled)
+		fRemoveButton->SetEnabled(!someAreEnabled && !someAreInQueue);
+		if((someAreEnabled && someAreDisabled) || someAreInQueue)
 		{
 			// there are a mix of enabled and disabled depots selected
 			fEnableButton->SetEnabled(false);

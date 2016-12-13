@@ -16,6 +16,7 @@ public:
 	virtual	bool			QuitRequested();
 	virtual void			MessageReceived(BMessage*);
 	void					SetTasks(int32 what, BStringList params);
+	void					SetTask(int32 what, BString param);
 private:
 	BPath					fPkgmanTaskOut, fPkgmanTaskErr;
 	BStringList				fParams;
