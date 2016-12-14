@@ -128,21 +128,22 @@ DepotsView::DepotsView()
 	BMessage *invokeMsg = new BMessage(ITEM_INVOKED);
 	fListView->SetInvocationMessage(invokeMsg);
 	
-	BView *statusView = new BView("status", B_SUPPORTS_LAYOUT);
-	BStringView *testView = new BStringView("test", "Status: Testing.....");
+	BView *statusContainerView = new BView("status", B_SUPPORTS_LAYOUT);
+	fListStatusView = new BStringView("status", "Changes pending:10");
+	statusContainerView->SetExplicitSize(fListStatusView->PreferredSize());
 //	BButton *testButton = new BButton("testbutton", "x", NULL);
 //	testButton->SetExplicitSize(BSize(18,13));
-	BLayoutBuilder::Group<>(statusView, B_VERTICAL, 0)
+	BLayoutBuilder::Group<>(statusContainerView, B_VERTICAL, 0)
 		.SetInsets(0,-2,0,0)
 		.AddGroup(B_HORIZONTAL, 1)
 			.Add(new BSeparatorView(B_VERTICAL))
-			.Add(testView)
+			.Add(fListStatusView)
 	//		.Add(testButton)
-	//		.AddGlue()
+			.AddGlue()
 		.End()
 		// This seperator and the SetInsets above prevents a blue line from showing when the listview is the focus
 		.Add(new BSeparatorView(B_HORIZONTAL));
-	fListView->AddStatusView(statusView);
+	fListView->AddStatusView(statusContainerView);
 	
 	
 	fEnableButton = new BButton(fLabelEnable, new BMessage(ENABLE_BUTTON_PRESSED));
@@ -310,12 +311,13 @@ DepotsView::MessageReceived(BMessage* msg)
 	switch(msg->what)
 	{
 		case REMOVE_REPOS :{
-			RepoRow *rowItem = (RepoRow*)fListView->CurrentSelection();
+			RepoRow *rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
 			while(rowItem)
 			{
-				fListView->RemoveRow(rowItem);
-				delete rowItem;
-				rowItem = (RepoRow*)fListView->CurrentSelection();
+				RepoRow *oldRow = rowItem;
+				rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection(rowItem));
+				fListView->RemoveRow(oldRow);
+				delete oldRow;
 			}
 			_SaveList();
 			break;
@@ -335,7 +337,7 @@ DepotsView::MessageReceived(BMessage* msg)
 			BStringList names;
 			bool paramsOK = true;
 			// Check if there are multiple selections of the same depot, pkgman won't like that
-			RepoRow* rowItem = (RepoRow*)fListView->CurrentSelection();
+			RepoRow* rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
 			while(rowItem)
 			{
 				if(names.HasString(rowItem->Name()) && kNewRepoName.Compare(rowItem->Name()) != 0)
@@ -349,7 +351,7 @@ DepotsView::MessageReceived(BMessage* msg)
 				}
 				else
 					names.Add(rowItem->Name());
-				rowItem = (RepoRow*)fListView->CurrentSelection(rowItem);
+				rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection(rowItem));
 			}
 			if(paramsOK)
 			{
@@ -391,11 +393,11 @@ DepotsView::MessageReceived(BMessage* msg)
 void
 DepotsView::_AddSelectedRowsToQueue()
 {
-	RepoRow* rowItem = (RepoRow*)fListView->CurrentSelection();
+	RepoRow* rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
 	while(rowItem)
 	{
 		_ModelAddToTaskQueue(rowItem);
-		rowItem = (RepoRow*)fListView->CurrentSelection(rowItem);
+		rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection(rowItem));
 	}
 }
 
@@ -436,6 +438,7 @@ void
 DepotsView::_ModelAddToTaskQueue(RepoRow* row)
 {
 	fTaskQueue.AddItem(row);
+	_UpdateStatusView();
 	row->SetTaskState(STATE_IN_QUEUE_WAITING);
 }
 
@@ -460,6 +463,7 @@ DepotsView::_ModelCompleteTask(bool noErrors)
 	if(!fTaskQueue.IsEmpty())
 	{
 		RepoRow* row = fTaskQueue.RemoveItemAt(0);
+		_UpdateStatusView();
 		row->SetTaskState(STATE_NOT_IN_QUEUE);
 		if(noErrors)
 			row->SetEnabled(!row->IsEnabled());
@@ -483,7 +487,7 @@ DepotsView::AddManualRepository(BString url)
 	for(index=0; index < listCount; index++)
 	{
 		// Find duplicate
-		RepoRow *repoItem = (RepoRow*)(fListView->RowAt(index));
+		RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
 		const char *urlPtr = repoItem->Url();
 		if(url.ICompare(urlPtr) == 0)
 		{
@@ -569,7 +573,7 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 		// Find duplicate
 		for(index=0; index < listCount; index++)
 		{
-			RepoRow *repoItem = (RepoRow*)(fListView->RowAt(index));
+			RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
 			repoItem->SetEnabled(false);
 		}
 	}
@@ -623,7 +627,7 @@ DepotsView::_SaveList()
 	int32 listCount = fListView->CountRows();
 	for(index=0; index < listCount; index++)
 	{
-		RepoRow *repoItem = (RepoRow*)(fListView->RowAt(index));
+		RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
 		nameList.Add(repoItem->Name());
 		urlList.Add(repoItem->Url());
 	}
@@ -644,7 +648,7 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 	// Find matching URL or names
 	for(index=0; index < listCount; index++)
 	{
-		RepoRow *repoItem = (RepoRow*)(fListView->RowAt(index));
+		RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
 		if(url.ICompare(repoItem->Url()) == 0)
 		{
 			// update name and enabled values
@@ -671,32 +675,29 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 void
 DepotsView::_UpdateButtons()
 {
-	RepoRow *rowItem = (RepoRow*)fListView->CurrentSelection();
+	RepoRow *rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
 	// At least one row is selected
 	if(rowItem)
 	{
 		bool someAreEnabled = false, someAreDisabled = false, someAreInQueue = false;
-		int32 index, selectedCount=0;
-		int32 count = fListView->CountRows();
-		for(index=0; index < count; index++)
+		int32 selectedCount=0;
+		RepoRow *rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
+		while(rowItem)
 		{
-			rowItem = (RepoRow*)fListView->RowAt(index);
-			if(rowItem->IsSelected())
+			selectedCount++;
+			switch(rowItem->TaskState())
 			{
-				selectedCount++;
-				switch(rowItem->TaskState())
-				{
-					case STATE_IN_QUEUE_WAITING:
-					case STATE_IN_QUEUE_RUNNING: {
-						someAreInQueue = true;
-						break;
-					}
+				case STATE_IN_QUEUE_WAITING:
+				case STATE_IN_QUEUE_RUNNING: {
+					someAreInQueue = true;
+					break;
 				}
-				if(rowItem->IsEnabled())
-					someAreEnabled = true;
-				else
-					someAreDisabled = true;
 			}
+			if(rowItem->IsEnabled())
+				someAreEnabled = true;
+			else
+				someAreDisabled = true;
+			rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection(rowItem));
 		}
 		// Change button labels depending on which rows are selected
 		if(selectedCount>1)
@@ -742,4 +743,19 @@ DepotsView::_UpdateButtons()
 		fDisableButton->SetEnabled(false);
 		fRemoveButton->SetEnabled(false);
 	}
+}
+
+
+void
+DepotsView::_UpdateStatusView()
+{
+	int count = fTaskQueue.CountItems();
+	if(count)
+	{
+		BString text(B_TRANSLATE_COMMENT("Changes pending:", "Status view text"));
+		text<<count;
+		fListStatusView->SetText(text);
+	}
+	else
+		fListStatusView->SetText("");
 }

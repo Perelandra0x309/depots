@@ -9,6 +9,7 @@
 #include <GroupView.h>
 #include <ObjectList.h>
 #include <String.h>
+#include <StringView.h>
 #include <View.h>
 
 #include "DepotsSettings.h"
@@ -54,6 +55,7 @@ private:
 	BPath					fPkgmanListOut;
 	DepotsSettings			fSettings;
 	BColumnListView			*fListView;
+	BStringView				*fListStatusView;
 	TaskLooper				*fTaskLooper;
 	bool					fIsTaskRunning;
 	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
@@ -79,6 +81,7 @@ private:
 	void					_SaveList();
 	RepoRow*				_AddRepo(BString name, BString url, bool enabled);
 	void					_UpdateButtons();
+	void					_UpdateStatusView();
 };
 
 #endif
