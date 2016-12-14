@@ -15,15 +15,14 @@ public:
 							TaskLooper(BLooper *target);
 	virtual	bool			QuitRequested();
 	virtual void			MessageReceived(BMessage*);
-	void					SetTasks(int32 what, BStringList params);
 	void					SetTask(int32 what, BString param);
 private:
-	BPath					fPkgmanTaskOut, fPkgmanTaskErr;
-	BStringList				fParams;
+	BPath					fPkgmanTaskOut;//, fPkgmanTaskErr;
+	BString					fParam;
 	int32					fWhat, fOutfileInit;
 	bool					fQuitWasRequested;
 	void					_DoTasks();
-	void					_UpdateStatus(BString text);
+	void					_AddErrorDetails(BString &details);
 	BLooper					*fMsgTarget;
 };
 

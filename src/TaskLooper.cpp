@@ -2,15 +2,16 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
-#include <Alert.h>
+//#include <Alert.h>
 #include <Catalog.h>
+#include <File.h>
 #include <FindDirectory.h>
 #include <MessageQueue.h>
 #include <stdlib.h>
-#include <stdio.h>
+//#include <stdio.h>
 
 #include "constants.h"
-#include "ErrorAlert.h"
+//#include "ErrorAlert.h"
 #include "TaskLooper.h"
 
 #undef B_TRANSLATION_CONTEXT
@@ -20,7 +21,6 @@
 TaskLooper::TaskLooper(BLooper *target)
 	:BLooper(),
 	fWhat(NO_TASKS),
-	fParams(),
 	fMsgTarget(target),
 	fQuitWasRequested(false),
 	fOutfileInit(B_ERROR)
@@ -30,9 +30,9 @@ TaskLooper::TaskLooper(BLooper *target)
 	if (status != B_OK)
 		status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanTaskOut); // alternate location
 	if (status == B_OK) {
-		fPkgmanTaskErr = fPkgmanTaskOut;
+//		fPkgmanTaskErr = fPkgmanTaskOut;
 		fPkgmanTaskOut.Append("pkgman_out");
-		fPkgmanTaskErr.Append("pkgman_stderr");
+//		fPkgmanTaskErr.Append("pkgman_stderr");
 		fOutfileInit = B_OK;
 	}
 	Run();
@@ -62,173 +62,121 @@ TaskLooper::MessageReceived(BMessage *msg)
 	}
 }
 
-// TODO remove?
-void
-TaskLooper::SetTasks(int32 what, BStringList params)
-{
-	fWhat = what;
-	fParams = params;
-}
-
 
 void
 TaskLooper::SetTask(int32 what, BString param)
 {
 	fWhat = what;
-	fParams.MakeEmpty();
-	fParams.Add(param);
+	fParam = param;
 }
 
 
 void
 TaskLooper::_DoTasks()
 {
-	
-	// Delete existing temp file
-	BEntry tmpEntry(fPkgmanTaskErr.Path());
-	if(tmpEntry.Exists())
-		tmpEntry.Remove();
-	tmpEntry.Unset();
-	
-	BStringList erroredParams;
-	int32 index, count = fParams.CountStrings();
-	for(index=0; index < count; index++)
+	// check if quit requested
+	if(fQuitWasRequested)
 	{
-		// check if the cancel button was pressed
-		if(fQuitWasRequested)
-		{
-			fMsgTarget->PostMessage(TASKS_CANCELED);
-			return;
+		fMsgTarget->PostMessage(TASKS_CANCELED);// TODO what happens?
+		return;
+	}
+	
+	BString errorDetails;
+	int returnResult = 0;
+	switch(fWhat){
+		case DISABLE_DEPOT: {
+			BString nameParam(fParam);
+			// Create command
+			BString command("yes | pkgman drop \"");
+			command.Append(nameParam).Append("\"");
+			if(fOutfileInit == B_OK)
+			{
+				command.Append(" > ").Append(fPkgmanTaskOut.Path());
+				command.Append(" 2> ").Append(fPkgmanTaskOut.Path()).Append("2");
+			}
+			int sysResult = system(command.String());
+			if(sysResult)
+			{
+				returnResult = sysResult;
+				errorDetails.Append("There was an error disabling the depot ").Append(nameParam).Append("\n");
+				if(fOutfileInit == B_OK)
+					_AddErrorDetails(errorDetails);
+			}
+			break;
 		}
-		
-		switch(fWhat){
-			case DISABLE_BUTTON_PRESSED: {
-				BString nameParam(fParams.StringAt(index));
-				// Set status bar text
-				BString statusText(B_TRANSLATE_COMMENT("Task (%number% of %total%): Disabling depot", "Do not translate %number% and %total%"));
-				BString indexStr, countStr;
-				indexStr<<index+1;
-				countStr<<count;
-				statusText.ReplaceFirst("%number%", indexStr);
-				statusText.ReplaceFirst("%total%", countStr);
-				statusText.Append(" ").Append(nameParam);
-				_UpdateStatus(statusText);
-				// Create command
-				BString command("yes | pkgman drop \"");
-				command.Append(nameParam).Append("\"");
-				if(fOutfileInit == B_OK)
-				{
-					command.Append(" > ").Append(fPkgmanTaskOut.Path());
-					command.Append(" 2> ").Append(fPkgmanTaskOut.Path()).Append("2");
-				}
-				int sysResult = system(command.String());
-				if(sysResult)
-				{
-					erroredParams.Add(nameParam);
-					if(fOutfileInit == B_OK)
-					{
-						command.SetTo("echo \"[");
-						command.Append(nameParam).Append("]\"").Append(" >> ").Append(fPkgmanTaskErr.Path());
-						system(command.String());
-						command.SetTo("cat ");
-						command.Append(fPkgmanTaskOut.Path()).Append(" >> ").Append(fPkgmanTaskErr.Path());
-						command.Append("; cat ").Append(fPkgmanTaskOut.Path()).Append("2 >> ").Append(fPkgmanTaskErr.Path());
-						system(command.String());
-						command.SetTo("echo '\n' >> ").Append(fPkgmanTaskErr.Path());
-						system(command.String());
-					}
-				}
-				break;
+		case ENABLE_DEPOT: {
+			BString urlParam(fParam);
+			// Create command
+			BString command("yes | pkgman add \"");
+			command.Append(urlParam).Append("\"");
+			if(fOutfileInit == B_OK)
+			{
+				command.Append(" > ").Append(fPkgmanTaskOut.Path());
+				command.Append(" 2> ").Append(fPkgmanTaskOut.Path()).Append("2");
 			}
-			case ENABLE_BUTTON_PRESSED: {
-				BString urlParam(fParams.StringAt(index));
-				// Set status bar text
-				BString statusText(B_TRANSLATE_COMMENT("Task (%number% of %total%): Enabling depot", "Do not translate %number% and %total%"));
-				BString indexStr, countStr;
-				indexStr<<index+1;
-				countStr<<count;
-				statusText.ReplaceFirst("%number%", indexStr);
-				statusText.ReplaceFirst("%total%", countStr);
-				statusText.Append(" ").Append(urlParam);
-				_UpdateStatus(statusText);
-				// Create command
-				BString command("yes | pkgman add \"");
-				command.Append(urlParam).Append("\"");
+			int sysResult = system(command.String());
+			if(sysResult)
+			{
+				returnResult = sysResult;
+				errorDetails.Append("There was an error enabling the depot ").Append(urlParam).Append("\n");
 				if(fOutfileInit == B_OK)
-				{
-					command.Append(" > ").Append(fPkgmanTaskOut.Path());
-					command.Append(" 2> ").Append(fPkgmanTaskOut.Path()).Append("2");
-				}
-				int sysResult = system(command.String());
-				if(sysResult)
-				{
-					erroredParams.Add(urlParam);
-					if(fOutfileInit == B_OK)
-					{
-						command.SetTo("echo \"[");
-						command.Append(urlParam).Append("]\"").Append(" >> ").Append(fPkgmanTaskErr.Path());
-						system(command.String());
-						command.SetTo("cat ");
-						command.Append(fPkgmanTaskOut.Path()).Append(" >> ").Append(fPkgmanTaskErr.Path());
-						command.Append("; cat ").Append(fPkgmanTaskOut.Path()).Append("2 >> ").Append(fPkgmanTaskErr.Path());
-						system(command.String());
-						command.SetTo("echo '\n' >> ").Append(fPkgmanTaskErr.Path());
-						system(command.String());
-					}
-				}
-				break;
+					_AddErrorDetails(errorDetails);
 			}
+			break;
 		}
 	}
 	// Delete temp files
-	tmpEntry.SetTo(fPkgmanTaskOut.Path());
-	if(tmpEntry.Exists())
-		tmpEntry.Remove();
-	BString out2Path(fPkgmanTaskOut.Path());
-	out2Path.Append("2");
-	tmpEntry.SetTo(out2Path);
-	if(tmpEntry.Exists())
-		tmpEntry.Remove();
-	tmpEntry.Unset();
+	if(fOutfileInit == B_OK)
+	{
+		BEntry tmpEntry(fPkgmanTaskOut.Path());
+		if(tmpEntry.Exists())
+			tmpEntry.Remove();
+		BString out2Path(fPkgmanTaskOut.Path());
+		out2Path.Append("2");
+		tmpEntry.SetTo(out2Path);
+		if(tmpEntry.Exists())
+			tmpEntry.Remove();
+		tmpEntry.Unset();
+	}
 	
 	// Report completion or errors
-	int32 errorCount = erroredParams.CountStrings();
-	if(errorCount==0)
+	if(returnResult == 0)
 	{
 		fMsgTarget->PostMessage(TASKS_COMPLETE);
 	}
 	else
 	{
-		// Error alert
-		BString errorText;
-		switch(fWhat){
-			case DISABLE_BUTTON_PRESSED: {
-				errorText.SetTo(B_TRANSLATE_COMMENT("There was an error disabling the depot", "Error message"));
-				break;
-			}
-			case ENABLE_BUTTON_PRESSED: {
-				errorText.SetTo(B_TRANSLATE_COMMENT("There was an error enabling the depot", "Error message"));
-				break;
-			}
-		}
-		errorText.Append(errorCount > 1 ? "s:\n\n" : " ");
-		errorText.Append(erroredParams.Join("\n"));
-		if(fOutfileInit == B_OK)
-			(new ErrorAlert(fPkgmanTaskErr, "error", errorText, B_TRANSLATE_COMMENT("View Details", " Button label"), kOKLabel))->Go(NULL);
-		else
-			(new BAlert("error", errorText, kOKLabel))->Go(NULL);
-		
-		fMsgTarget->PostMessage(TASKS_COMPLETE_WITH_ERRORS);
+		BMessage reply(TASKS_COMPLETE_WITH_ERRORS);
+		reply.AddString(key_details, errorDetails);
+		fMsgTarget->PostMessage(&reply);
 	}
-	
 }
 
+
 void
-TaskLooper::_UpdateStatus(BString text)
+TaskLooper::_AddErrorDetails(BString &details)
 {
-	// TODO send message to window
-	
-	/*BMessage msg(UPDATE_STATUS);
-	msg.AddString(key_text, text);
-	fMsgTarget->PostMessage(&msg);*/
+	details.Append("Details:\n\n");
+	BFile outFile(fPkgmanTaskOut.Path(), B_READ_ONLY);
+	if(outFile.InitCheck() == B_OK)
+	{
+		off_t size;
+		outFile.GetSize(&size);
+		char buffer[size];
+		outFile.Read(buffer, size);
+		details.Append(buffer).Append("\n");
+	}
+	outFile.Unset();
+	BString errorPath(fPkgmanTaskOut.Path());
+	errorPath.Append("2");
+	outFile.SetTo(errorPath.String(), B_READ_ONLY);
+	if(outFile.InitCheck() == B_OK)
+	{
+		off_t size;
+		outFile.GetSize(&size);
+		char buffer[size];
+		outFile.Read(buffer, size);
+		details.Append(buffer).Append("\n");
+	}
+	outFile.Unset();
 }

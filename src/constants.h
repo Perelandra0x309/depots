@@ -32,10 +32,12 @@ static const Repository kDefaultRepos[] = {
 	{ "FatElk", "http://coquillemartialarts.com/fatelk/repo"}
 };
 
+//Message keys
 #define key_frame "frame"
 #define key_name "repo_name"
 #define key_url "repo_url"
 #define key_text "text"
+#define key_details "details"
 
 //Messages
 enum {
@@ -55,7 +57,9 @@ enum {
 	TASKS_CANCELED,
 	UPDATE_LIST,
 	SHOW_ABOUT,
-	NO_TASKS
+	NO_TASKS,
+	ENABLE_DEPOT,
+	DISABLE_DEPOT
 };
 
 // Repo row task state

@@ -376,6 +376,12 @@ DepotsView::MessageReceived(BMessage* msg)
 		}
 		case TASKS_COMPLETE_WITH_ERRORS: {
 			_CompleteRunningTask(false);
+			BString errorDetails;
+			status_t result = msg->FindString(key_details, &errorDetails);
+			if(result == B_OK)
+			{// TODO seperate details view?
+				(new BAlert("error", errorDetails, kOKLabel))->Go(NULL);
+			}
 			_StartNextTask();
 			_UpdateButtons();
 			break;
@@ -419,9 +425,9 @@ DepotsView::_StartNextTask()
 		if(row != NULL)
 		{
 			if(row->IsEnabled())
-				fTaskLooper->SetTask(DISABLE_BUTTON_PRESSED, row->Name());
+				fTaskLooper->SetTask(DISABLE_DEPOT, row->Name());
 			else
-				fTaskLooper->SetTask(ENABLE_BUTTON_PRESSED, row->Url());
+				fTaskLooper->SetTask(ENABLE_DEPOT, row->Url());
 			fIsTaskRunning = true;
 			fTaskLooper->PostMessage(DO_TASKS);
 		}
