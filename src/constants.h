@@ -16,6 +16,7 @@
 static const BString kOKLabel = B_TRANSLATE_COMMENT("OK", "Button label");
 static const BString kCancelLabel = B_TRANSLATE_COMMENT("Cancel", "Button label");
 static const BString kWebsiteUrl = "http://perelandra0x309.github.io/depots";
+static const BString kNewRepoName = B_TRANSLATE_COMMENT("Unknown", "Unknown depot name");
 
 typedef struct {
 	const char* name;

@@ -52,20 +52,18 @@ RepoRow::SetName(const char *name)
 void
 RepoRow::SetEnabled(bool enabled)
 {
-	BStringField *field = (BStringField*)GetField(kEnabledColumn);
-	field->SetString(enabled ? "√" : "");
 	fEnabled = enabled;
-	Invalidate();
+	RefreshEnabledField();
 }
 
-/*
+
 void
-RepoRow::SetPendingTaskCompletion()
+RepoRow::RefreshEnabledField()
 {
 	BStringField *field = (BStringField*)GetField(kEnabledColumn);
-	field->SetString(B_UTF8_ELLIPSIS);
+	field->SetString(fEnabled ? "\xE2\x9C\x94" : "");
 	Invalidate();
-}*/
+}
 
 
 void
@@ -335,28 +333,23 @@ DepotsView::MessageReceived(BMessage* msg)
 		}
 		case ENABLE_BUTTON_PRESSED: {
 			BStringList names;
-			int32 index;
-			int32 count = fListView->CountRows();
 			bool paramsOK = true;
 			// Check if there are multiple selections of the same depot, pkgman won't like that
-			// TODO iterator of selected rows?
-			for(index=0; index < count; index++)
+			RepoRow* rowItem = (RepoRow*)fListView->CurrentSelection();
+			while(rowItem)
 			{
-				RepoRow* rowItem = (RepoRow*)fListView->RowAt(index);
-				if(rowItem->IsSelected())
+				if(names.HasString(rowItem->Name()) && kNewRepoName.Compare(rowItem->Name()) != 0)
 				{
-					if(names.HasString(rowItem->Name()))
-					{
-						(new BAlert("duplicate", B_TRANSLATE_COMMENT("You can only enable one URL for "
-										"each depot.  Please change your selections.", "Error message"),
-										kOKLabel, NULL, NULL,
-										B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
-						paramsOK = false;
-						break;
-					}
-					else
-						names.Add(rowItem->Name());
+					(new BAlert("duplicate", B_TRANSLATE_COMMENT("You can only enable one URL for "
+									"each depot.  Please change your selections.", "Error message"),
+									kOKLabel, NULL, NULL,
+									B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
+					paramsOK = false;
+					break;
 				}
+				else
+					names.Add(rowItem->Name());
+				rowItem = (RepoRow*)fListView->CurrentSelection(rowItem);
 			}
 			if(paramsOK)
 			{
@@ -367,22 +360,6 @@ DepotsView::MessageReceived(BMessage* msg)
 			break;
 		}
 		case DISABLE_BUTTON_PRESSED: {
-		/*	BStringList params;
-			int32 index;
-			int32 count = fListView->CountRows();
-			// Add repository name of each selected item that is enabled in pkgman
-			for(index=0; index < count; index++)
-			{
-				RepoRow* rowItem = (RepoRow*)fListView->RowAt(index);
-				if(rowItem->IsSelected() && rowItem->IsEnabled())
-				{
-					params.Add(rowItem->Name());
-					rowItem->SetPendingTaskCompletion();
-				}
-			}
-			fTaskLooper->SetTasks(msg->what, params);
-			fIsTaskRunning = true;
-			fTaskLooper->PostMessage(DO_TASKS);*/
 			_AddSelectedRowsToQueue();
 			_StartNextTask();
 			_UpdateButtons();
@@ -397,7 +374,6 @@ DepotsView::MessageReceived(BMessage* msg)
 		case TASKS_COMPLETE: {
 			_CompleteRunningTask(true);
 			_StartNextTask();
-//			_UpdatePkgmanList(true);
 			_UpdateButtons();
 			break;
 		}
@@ -415,14 +391,11 @@ DepotsView::MessageReceived(BMessage* msg)
 void
 DepotsView::_AddSelectedRowsToQueue()
 {
-	int32 index, count = fListView->CountRows();
-	// Add repository name of each selected item that is enabled in pkgman
-	for(index=0; index < count; index++)
+	RepoRow* rowItem = (RepoRow*)fListView->CurrentSelection();
+	while(rowItem)
 	{
-		// TODO detect next selected row by current selection?
-		RepoRow* rowItem = (RepoRow*)fListView->RowAt(index);
-		if(rowItem->IsSelected())
-			_ModelAddToTaskQueue(rowItem);
+		_ModelAddToTaskQueue(rowItem);
+		rowItem = (RepoRow*)fListView->CurrentSelection(rowItem);
 	}
 }
 
@@ -486,11 +459,12 @@ DepotsView::_ModelCompleteTask(bool noErrors)
 {
 	if(!fTaskQueue.IsEmpty())
 	{
-		RepoRow* row = fTaskQueue.ItemAt(0);
+		RepoRow* row = fTaskQueue.RemoveItemAt(0);
 		row->SetTaskState(STATE_NOT_IN_QUEUE);
 		if(noErrors)
 			row->SetEnabled(!row->IsEnabled());
-		fTaskQueue.RemoveItemAt(0);
+		else
+			row->RefreshEnabledField();
 		return row;
 	}
 	else
@@ -501,7 +475,7 @@ DepotsView::_ModelCompleteTask(bool noErrors)
 void
 DepotsView::AddManualRepository(BString url)
 {
-	BString name(B_TRANSLATE_COMMENT("Unknown", "Unknown depot name"));
+	BString name(kNewRepoName);
 	BString rootUrl = _GetRootUrl(url);
 	bool foundRoot = false;
 	int32 index;

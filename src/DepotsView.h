@@ -29,8 +29,8 @@ public:
 			void				SetName(const char *name);
 			const char*			Url() const { return fUrl.String(); }
 			void				SetEnabled(bool enabled);
+			void				RefreshEnabledField();
 			bool				IsEnabled() { return fEnabled; }
-//			void				SetPendingTaskCompletion();
 			void				SetTaskState(uint32 state);
 			uint32				TaskState() { return fTaskState; }
 private:
