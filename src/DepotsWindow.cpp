@@ -124,7 +124,9 @@ DepotsWindow::MessageReceived(BMessage* msg)
 	switch(msg->what)
 	{
 		case ADD_REPO_WINDOW: {
-			new AddRepoWindow(Frame(), this);
+			BRect frame = Frame();
+			frame.right -= 2*kAddWindowOffset;
+			new AddRepoWindow(frame, this);
 			break;
 		}
 		case ADD_REPO_URL: {

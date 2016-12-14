@@ -12,6 +12,7 @@
 #define B_TRANSLATION_CONTEXT "Constants"
 
 #define USE_MINIMAL_BUTTONS 1
+static const int kAddWindowOffset = 10;
 
 static const BString kOKLabel = B_TRANSLATE_COMMENT("OK", "Button label");
 static const BString kCancelLabel = B_TRANSLATE_COMMENT("Cancel", "Button label");

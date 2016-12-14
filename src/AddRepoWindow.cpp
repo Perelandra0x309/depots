@@ -36,7 +36,7 @@ AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 	fText->MakeFocus();
 	
 	// Location on screen
-	MoveTo(size.left + 20, size.top + 20);
+	MoveTo(size.left + kAddWindowOffset, size.top + kAddWindowOffset);
 	Show();
 }
 
