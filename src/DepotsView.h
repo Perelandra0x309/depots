@@ -59,9 +59,7 @@ private:
 	TaskLooper				*fTaskLooper;
 	bool					fIsTaskRunning;
 	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
-	BString					fTitleEnabled, fTitleName, fTitleUrl,
-							fLabelRemove, fLabelRemoveAll,
-							fLabelEnable, fLabelDisable, fLabelEnableAll, fLabelDisableAll;
+	
 	// Message helpers
 	void					_AddSelectedRowsToQueue();
 	void					_StartNextTask();

@@ -23,6 +23,17 @@
 #define B_TRANSLATION_CONTEXT "DepotsView"
 
 
+const static BString kTitleEnabled = B_TRANSLATE_COMMENT("Enabled", "Column title");
+const static BString kTitleName = B_TRANSLATE_COMMENT("Name", "Column title");
+const static BString kTitleUrl = B_TRANSLATE_COMMENT("URL", "Column title");
+const static BString kLabelRemove = B_TRANSLATE_COMMENT("Remove", "Button label");
+const static BString kLabelRemoveAll = B_TRANSLATE_COMMENT("Remove All", "Button label");
+const static BString kLabelEnable = B_TRANSLATE_COMMENT("Enable", "Button label");
+const static BString kLabelEnableAll = B_TRANSLATE_COMMENT("Enable All", "Button label");
+const static BString kLabelDisable = B_TRANSLATE_COMMENT("Disable", "Button label");
+const static BString kLabelDisableAll = B_TRANSLATE_COMMENT("Disable All", "Button label");
+const static BString kStatusViewText = B_TRANSLATE_COMMENT("Changes pending:", "Status view text");
+
 RepoRow::RepoRow(const char* repo_name, const char* repo_url, bool enabled)
 	:
 	BRow(),
@@ -95,16 +106,7 @@ DepotsView::DepotsView()
 	:
 	BView("depotsview", B_SUPPORTS_LAYOUT),
 	fTaskLooper(NULL),
-	fIsTaskRunning(false),
-	fTitleEnabled(B_TRANSLATE_COMMENT("Enabled", "Column title")),
-	fTitleName(B_TRANSLATE_COMMENT("Name", "Column title")),
-	fTitleUrl(B_TRANSLATE_COMMENT("URL", "Column title")),
-	fLabelRemove(B_TRANSLATE_COMMENT("Remove", "Button label")),
-	fLabelRemoveAll(B_TRANSLATE_COMMENT("Remove All", "Button label")),
-	fLabelEnable(B_TRANSLATE_COMMENT("Enable", "Button label")),
-	fLabelEnableAll(B_TRANSLATE_COMMENT("Enable All", "Button label")),
-	fLabelDisable(B_TRANSLATE_COMMENT("Disable", "Button label")),
-	fLabelDisableAll(B_TRANSLATE_COMMENT("Disable All", "Button label"))
+	fIsTaskRunning(false)
 {
 	// Temp file location
 	status_t status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanListOut);
@@ -116,38 +118,42 @@ DepotsView::DepotsView()
 	
 	fListView = new BColumnListView("list", B_NAVIGABLE, B_PLAIN_BORDER);
 	fListView->SetSelectionMessage(new BMessage(LIST_SELECTION_CHANGED));
-	float col0width = be_plain_font->StringWidth(fTitleEnabled) + 15;
-	float col1width = be_plain_font->StringWidth(fTitleName) + 15;
-	float col2width = be_plain_font->StringWidth(fTitleUrl) + 15;
-	fListView->AddColumn(new BStringColumn(fTitleEnabled, col0width, col0width, col0width,
+	float col0width = be_plain_font->StringWidth(kTitleEnabled) + 15;
+	float col1width = be_plain_font->StringWidth(kTitleName) + 15;
+	float col2width = be_plain_font->StringWidth(kTitleUrl) + 15;
+	fListView->AddColumn(new BStringColumn(kTitleEnabled, col0width, col0width, col0width,
 		B_TRUNCATE_END, B_ALIGN_CENTER), kEnabledColumn);
-	fListView->AddColumn(new BStringColumn(fTitleName, 90, col1width, 300,
+	fListView->AddColumn(new BStringColumn(kTitleName, 90, col1width, 300,
 		B_TRUNCATE_END), kNameColumn);
-	fListView->AddColumn(new BStringColumn(fTitleUrl, 500, col2width, 5000,
+	fListView->AddColumn(new BStringColumn(kTitleUrl, 500, col2width, 5000,
 		B_TRUNCATE_END), kUrlColumn);
 	BMessage *invokeMsg = new BMessage(ITEM_INVOKED);
 	fListView->SetInvocationMessage(invokeMsg);
 	
+	// Depot list status view
 	BView *statusContainerView = new BView("status", B_SUPPORTS_LAYOUT);
-	fListStatusView = new BStringView("status", "Changes pending:10");
-	statusContainerView->SetExplicitSize(fListStatusView->PreferredSize());
-//	BButton *testButton = new BButton("testbutton", "x", NULL);
-//	testButton->SetExplicitSize(BSize(18,13));
+	BString templateText(kStatusViewText);
+	templateText.Append("88");
+	fListStatusView = new BStringView("status", templateText);
+	BFont font(be_plain_font);
+	font.SetSize(10.0f);
+	fListStatusView->SetFont(&font, B_FONT_SIZE);
+	BSize statusViewSize = fListStatusView->PreferredSize();
+	statusViewSize.width += 3;
+	statusViewSize.height += 1;
+	statusContainerView->SetExplicitSize(statusViewSize);
 	BLayoutBuilder::Group<>(statusContainerView, B_VERTICAL, 0)
-		.SetInsets(0,-2,0,0)
 		.AddGroup(B_HORIZONTAL, 1)
 			.Add(new BSeparatorView(B_VERTICAL))
 			.Add(fListStatusView)
-	//		.Add(testButton)
 			.AddGlue()
 		.End()
-		// This seperator and the SetInsets above prevents a blue line from showing when the listview is the focus
 		.Add(new BSeparatorView(B_HORIZONTAL));
 	fListView->AddStatusView(statusContainerView);
 	
 	
-	fEnableButton = new BButton(fLabelEnable, new BMessage(ENABLE_BUTTON_PRESSED));
-	fDisableButton = new BButton(fLabelDisable, new BMessage(DISABLE_BUTTON_PRESSED));
+	fEnableButton = new BButton(kLabelEnable, new BMessage(ENABLE_BUTTON_PRESSED));
+	fDisableButton = new BButton(kLabelDisable, new BMessage(DISABLE_BUTTON_PRESSED));
 	
 #if USE_MINIMAL_BUTTONS
 	// ---Minimal buttons option---
@@ -294,6 +300,7 @@ DepotsView::AllAttached()
 	fRemoveButton->SetEnabled(false);
 	fEnableButton->SetEnabled(false);
 	fDisableButton->SetEnabled(false);
+	_UpdateStatusView();
 	_InitList();
 }
 
@@ -438,7 +445,9 @@ void
 DepotsView::_ModelAddToTaskQueue(RepoRow* row)
 {
 	fTaskQueue.AddItem(row);
-	_UpdateStatusView();
+	// Only present a status count if there is more than one item in queue
+	if(fTaskQueue.CountItems() > 1)
+		_UpdateStatusView();
 	row->SetTaskState(STATE_IN_QUEUE_WAITING);
 }
 
@@ -703,18 +712,18 @@ DepotsView::_UpdateButtons()
 		if(selectedCount>1)
 		{
 #if !USE_MINIMAL_BUTTONS
-			fRemoveButton->SetLabel(fLabelRemoveAll);
+			fRemoveButton->SetLabel(kLabelRemoveAll);
 #endif
-			fEnableButton->SetLabel(fLabelEnableAll);
-			fDisableButton->SetLabel(fLabelDisableAll);
+			fEnableButton->SetLabel(kLabelEnableAll);
+			fDisableButton->SetLabel(kLabelDisableAll);
 		}
 		else
 		{
 #if !USE_MINIMAL_BUTTONS
-			fRemoveButton->SetLabel(fLabelRemove);
+			fRemoveButton->SetLabel(kLabelRemove);
 #endif
-			fEnableButton->SetLabel(fLabelEnable);
-			fDisableButton->SetLabel(fLabelDisable);
+			fEnableButton->SetLabel(kLabelEnable);
+			fDisableButton->SetLabel(kLabelDisable);
 		}
 		// Set which buttons should be enabled
 		fRemoveButton->SetEnabled(!someAreEnabled && !someAreInQueue);
@@ -735,10 +744,10 @@ DepotsView::_UpdateButtons()
 	else
 	{
 #if !USE_MINIMAL_BUTTONS
-		fRemoveButton->SetLabel(fLabelRemove);
+		fRemoveButton->SetLabel(kLabelRemove);
 #endif
-		fEnableButton->SetLabel(fLabelEnable);
-		fDisableButton->SetLabel(fLabelDisable);
+		fEnableButton->SetLabel(kLabelEnable);
+		fDisableButton->SetLabel(kLabelDisable);
 		fEnableButton->SetEnabled(false);
 		fDisableButton->SetEnabled(false);
 		fRemoveButton->SetEnabled(false);
@@ -752,7 +761,7 @@ DepotsView::_UpdateStatusView()
 	int count = fTaskQueue.CountItems();
 	if(count)
 	{
-		BString text(B_TRANSLATE_COMMENT("Changes pending:", "Status view text"));
+		BString text(kStatusViewText);
 		text<<count;
 		fListStatusView->SetText(text);
 	}
