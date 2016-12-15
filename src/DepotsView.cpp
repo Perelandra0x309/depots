@@ -19,6 +19,7 @@
 
 #include "constants.h"
 #include "DepotsView.h"
+#include "ErrorAlert.h"
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "DepotsView"
@@ -130,8 +131,7 @@ DepotsView::DepotsView()
 		B_TRUNCATE_END), kNameColumn);
 	fListView->AddColumn(new BStringColumn(kTitleUrl, 500, col2width, 5000,
 		B_TRUNCATE_END), kUrlColumn);
-	BMessage *invokeMsg = new BMessage(ITEM_INVOKED);
-	fListView->SetInvocationMessage(invokeMsg);
+	fListView->SetInvocationMessage(new BMessage(ITEM_INVOKED));
 	
 	// Depot list status view
 	BView *statusContainerView = new BView("status", B_SUPPORTS_LAYOUT);
@@ -356,7 +356,7 @@ DepotsView::MessageReceived(BMessage* msg)
 			status_t result = msg->FindString(key_details, &errorDetails);
 			if(result == B_OK)
 			{// TODO seperate details view?
-				(new BAlert("error", errorDetails, kOKLabel))->Go(NULL);
+				(new ErrorAlert("error", errorDetails, kOKLabel, NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
 			}
 			_StartNextTask();
 			_UpdateButtons();

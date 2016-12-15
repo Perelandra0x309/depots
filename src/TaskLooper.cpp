@@ -158,8 +158,8 @@ TaskLooper::_AddErrorDetails(BString &details)
 		off_t size;
 		outFile.GetSize(&size);
 		char buffer[size];
-		outFile.Read(buffer, size);
-		details.Append(buffer).Append("\n");
+		size_t bytes = outFile.Read(buffer, size);
+		details.Append(buffer, bytes).Append("\n");
 	}
 	outFile.Unset();
 	BString errorPath(fPkgmanTaskOut.Path());
@@ -170,8 +170,8 @@ TaskLooper::_AddErrorDetails(BString &details)
 		off_t size;
 		outFile.GetSize(&size);
 		char buffer[size];
-		outFile.Read(buffer, size);
-		details.Append(buffer).Append("\n");
+		size_t bytes = outFile.Read(buffer, size);
+		details.Append(buffer, bytes);
 	}
 	outFile.Unset();
 }
