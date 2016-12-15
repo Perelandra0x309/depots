@@ -8,7 +8,6 @@
 #include <Looper.h>
 #include <Path.h>
 #include <String.h>
-#include <StringList.h>
 
 class TaskLooper : public BLooper {
 public:
@@ -17,11 +16,11 @@ public:
 	virtual void			MessageReceived(BMessage*);
 	void					SetTask(int32 what, BString param);
 private:
-	BPath					fPkgmanTaskOut;//, fPkgmanTaskErr;
+	BPath					fPkgmanTaskOut;
 	BString					fParam;
 	int32					fWhat, fOutfileInit;
 	bool					fQuitWasRequested;
-	void					_DoTasks();
+	void					_DoTask();
 	void					_AddErrorDetails(BString &details);
 	BLooper					*fMsgTarget;
 };

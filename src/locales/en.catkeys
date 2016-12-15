@@ -1,9 +1,10 @@
-1	English	application/x-vnd.BH-Depots	2636920170
+1	English	application/x-vnd.BH-Depots	631340856
 The URL must start with a protocol, for example http:// or https://	AddRepoWindow	Add URL error message	The URL must start with a protocol, for example http:// or https://
 Add	AddRepoWindow	Button label	Add
 Depot URL:	AddRepoWindow	Text box label	Depot URL:
 Cancel	Constants	Button label	Cancel
 OK	Constants	Button label	OK
+Unknown	Constants	Unknown depot name	Unknown
 Depots preflet version 1.0.1	DepotsApplication	About box line 1	Depots preflet version 1.0.1
 Copyright © 2016 by Brian Hill	DepotsApplication	About box line 2	Copyright © 2016 by Brian Hill
 This preflet will enable and disable depots used in the HaikuDepot application.	DepotsApplication	About box line 3	This preflet will enable and disable depots used in the HaikuDepot application.
@@ -19,10 +20,7 @@ URL	DepotsView	Column title	URL
 Depot already exists.	DepotsView	Error message	Depot already exists.
 You can only enable one URL for each depot.  Please change your selections.	DepotsView	Error message	You can only enable one URL for each depot.  Please change your selections.
 Select depots to use in HaikuDepot:	DepotsView	Label text	Select depots to use in HaikuDepot:
-Unknown	DepotsView	Unknown depot name	Unknown
+Changes completed	DepotsView	Status view text	Changes completed
+Changes pending:	DepotsView	Status view text	Changes pending:
+Tasks are still running. Stop tasks and quit?	DepotsWindow	Alert message	Tasks are still running. Stop tasks and quit?
 Depots	System name		Depots
-View Details	TaskLooper	 Button label	View Details
-Task (%number% of %total%): Disabling depot	TaskLooper	Do not translate %number% and %total%	Task (%number% of %total%): Disabling depot
-Task (%number% of %total%): Enabling depot	TaskLooper	Do not translate %number% and %total%	Task (%number% of %total%): Enabling depot
-There was an error disabling the depot	TaskLooper	Error message	There was an error disabling the depot
-There was an error enabling the depot	TaskLooper	Error message	There was an error enabling the depot

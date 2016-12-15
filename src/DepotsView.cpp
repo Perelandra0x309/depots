@@ -167,13 +167,11 @@ DepotsView::DepotsView()
 	int buttonHeight = int(fontHeight.ascent + fontHeight.descent + 12); // button size determined by font size
 	BSize btnSize(buttonHeight,buttonHeight);
 	
-	// Create button views with fixed size
+	// Create buttons with fixed size
 	fAddButton = new BButton("plus", "+", new BMessage(ADD_REPO_WINDOW));
 	fAddButton->SetExplicitSize(btnSize);
-	
 	fRemoveButton = new BButton("minus", "-", new BMessage(REMOVE_REPOS));
 	fRemoveButton->SetExplicitSize(btnSize);
-	
 	fAboutButton = new BButton("about", "?", new BMessage(SHOW_ABOUT));
 	fAboutButton->SetExplicitSize(btnSize);
 	
@@ -212,40 +210,6 @@ DepotsView::DepotsView()
 				.Add(fDisableButton)
 			.End()
 		.End();
-		
-		/* Saved- buttons in seperate horizontal groups
-		.AddGroup(B_HORIZONTAL, 0, 0.0)
-			.Add(new BSeparatorView(B_VERTICAL))
-			.AddGroup(B_VERTICAL, 0, 0.0)
-				.AddGroup(B_HORIZONTAL, 3, 0.0)
-					.SetInsets(3,3,3,3)
-	//				.Add(plusButton, 0.0)
-	//				.Add(minusButton, 0.0)
-					//.Add(new BSeparatorView(B_VERTICAL))
-					.Add(button1View)
-					//.Add(new BSeparatorView(B_VERTICAL))//, B_FANCY_BORDER))
-					.Add(button2View)
-					//.Add(new BSeparatorView(B_VERTICAL))
-	//				.AddGlue()
-				.End()
-				.Add(new BSeparatorView(B_HORIZONTAL))
-			.End()
-			.Add(new BSeparatorView(B_VERTICAL))
-			.AddGroup(B_HORIZONTAL, 0, 1)
-	//			.Add(new BSeparatorView(B_VERTICAL))
-				.AddGlue()
-			.End()
-		.End()
-	//	.Add(new BSeparatorView(B_HORIZONTAL))
-		.AddGroup(B_HORIZONTAL)
-		//	.Add(fAddButton)
-		//	.Add(fRemoveButton)
-			.AddGlue()
-			.Add(fEnableButton)
-			.Add(fDisableButton)
-		.End();
-		*/
-		
 	// ---End minimal buttons section---
 #else
 	
@@ -339,6 +303,7 @@ DepotsView::MessageReceived(BMessage* msg)
 			break;
 		}
 		case ITEM_INVOKED: {
+			// Simulates pressing whichever is the enabled button
 			if(fEnableButton->IsEnabled())
 			{
 				BMessage invokeMessage(ENABLE_BUTTON_PRESSED);
@@ -385,7 +350,7 @@ DepotsView::MessageReceived(BMessage* msg)
 			_UpdateButtons();
 			break;
 		}
-		case TASKS_COMPLETE_WITH_ERRORS: {
+		case TASK_COMPLETE_WITH_ERRORS: {
 			_CompleteRunningTask(false);
 			BString errorDetails;
 			status_t result = msg->FindString(key_details, &errorDetails);
@@ -397,7 +362,7 @@ DepotsView::MessageReceived(BMessage* msg)
 			_UpdateButtons();
 			break;
 		}
-		case TASKS_COMPLETE: {
+		case TASK_COMPLETE: {
 			_CompleteRunningTask(true);
 			_StartNextTask();
 			_UpdateButtons();
@@ -444,7 +409,7 @@ DepotsView::_StartNextTask()
 			else
 				fTaskLooper->SetTask(ENABLE_DEPOT, row->Url());
 			fIsTaskRunning = true;
-			fTaskLooper->PostMessage(DO_TASKS);
+			fTaskLooper->PostMessage(DO_TASK);
 		}
 	}
 }

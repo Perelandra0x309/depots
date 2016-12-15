@@ -2,16 +2,13 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
-//#include <Alert.h>
 #include <Catalog.h>
 #include <File.h>
 #include <FindDirectory.h>
 #include <MessageQueue.h>
 #include <stdlib.h>
-//#include <stdio.h>
 
 #include "constants.h"
-//#include "ErrorAlert.h"
 #include "TaskLooper.h"
 
 #undef B_TRANSLATION_CONTEXT
@@ -30,9 +27,7 @@ TaskLooper::TaskLooper(BLooper *target)
 	if (status != B_OK)
 		status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanTaskOut); // alternate location
 	if (status == B_OK) {
-//		fPkgmanTaskErr = fPkgmanTaskOut;
 		fPkgmanTaskOut.Append("pkgman_out");
-//		fPkgmanTaskErr.Append("pkgman_stderr");
 		fOutfileInit = B_OK;
 	}
 	Run();
@@ -55,8 +50,8 @@ TaskLooper::MessageReceived(BMessage *msg)
 {
 	switch(msg->what)
 	{
-		case DO_TASKS: {
-			_DoTasks();
+		case DO_TASK: {
+			_DoTask();
 			break;
 		}
 	}
@@ -72,12 +67,12 @@ TaskLooper::SetTask(int32 what, BString param)
 
 
 void
-TaskLooper::_DoTasks()
+TaskLooper::_DoTask()
 {
 	// check if quit requested
 	if(fQuitWasRequested)
 	{
-		fMsgTarget->PostMessage(TASKS_CANCELED);// TODO what happens?
+		fMsgTarget->PostMessage(TASK_CANCELED);// TODO what happens?
 		return;
 	}
 	
@@ -142,11 +137,11 @@ TaskLooper::_DoTasks()
 	// Report completion or errors
 	if(returnResult == 0)
 	{
-		fMsgTarget->PostMessage(TASKS_COMPLETE);
+		fMsgTarget->PostMessage(TASK_COMPLETE);
 	}
 	else
 	{
-		BMessage reply(TASKS_COMPLETE_WITH_ERRORS);
+		BMessage reply(TASK_COMPLETE_WITH_ERRORS);
 		reply.AddString(key_details, errorDetails);
 		fMsgTarget->PostMessage(&reply);
 	}
