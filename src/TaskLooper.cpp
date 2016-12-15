@@ -6,13 +6,69 @@
 #include <File.h>
 #include <FindDirectory.h>
 #include <MessageQueue.h>
-#include <stdlib.h>
+//#include <stdlib.h>
+#include <package/AddRepositoryRequest.h>
+#include <package/DropRepositoryRequest.h>
+#include <package/RefreshRepositoryRequest.h>
+#include <package/PackageRoster.h>
+#include <package/RepositoryConfig.h>
 
 #include "constants.h"
 #include "TaskLooper.h"
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "TaskLooper"
+
+using BSupportKit::BJob;
+
+
+JobStateListener::JobStateListener(uint32 flags)
+	:
+	fFlags(flags)
+{
+}
+
+/*
+void
+JobStateListener::JobStarted(BJob* job)
+{
+	//printf("%s ...\n", job->Title().String());
+}
+
+
+void
+JobStateListener::JobSucceeded(BJob* job)
+{
+}
+*/
+
+void
+JobStateListener::JobFailed(BJob* job)
+{
+	fResultText.SetTo("Result=");
+	fResultText<<strerror(job->Result());
+	if(job->ErrorString().Length() > 0)
+		fResultText.Append("\nDescription=").Append(job->ErrorString());
+/*	BString error = job->ErrorString();
+	if (error.Length() > 0) {
+		error.ReplaceAll("\n", "\n*** ");
+		fprintf(stderr, "%s", error.String());
+	}
+	if ((fFlags & EXIT_ON_ERROR) != 0)
+		DIE(job->Result(), "failed!");*/
+}
+
+
+void
+JobStateListener::JobAborted(BJob* job)
+{
+	fResultText.SetTo("Result=");
+	fResultText<<strerror(job->Result());
+	if(job->ErrorString().Length() > 0)
+		fResultText.Append("\nDescription=").Append(job->ErrorString());
+//	if ((fFlags & EXIT_ON_ABORT) != 0)
+//		DIE(job->Result(), "aborted");
+}
 
 
 TaskLooper::TaskLooper(BLooper *target)
@@ -23,13 +79,13 @@ TaskLooper::TaskLooper(BLooper *target)
 	fOutfileInit(B_ERROR)
 {
 	// Temp file location
-	status_t status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanTaskOut);
+/*	status_t status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanTaskOut);
 	if (status != B_OK)
 		status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanTaskOut); // alternate location
 	if (status == B_OK) {
 		fPkgmanTaskOut.Append("pkgman_out");
 		fOutfileInit = B_OK;
-	}
+	}*/
 	Run();
 }
 
@@ -77,12 +133,28 @@ TaskLooper::_DoTask()
 	}
 	
 	BString errorDetails;
-	int returnResult = 0;
+	status_t returnResult = 0;
 	switch(fWhat){
 		case DISABLE_DEPOT: {
 			BString nameParam(fParam);
+			DecisionProvider decisionProvider;
+			JobStateListener listener;
+			BPackageKit::BContext context(decisionProvider, listener);
+			BPackageKit::DropRepositoryRequest request(context, nameParam);
+			status_t result = request.Process();
+			if (result != B_OK) {
+				if (result != B_CANCELED) {
+				//	DIE(result, "request for dropping repository \"%s\" failed",
+				//		repoName);
+					returnResult = result;
+					errorDetails.Append("There was an error disabling the depot ").Append(nameParam);
+					errorDetails.Append("\n\nDetails:\n").Append(listener.GetResult());
+					
+				}
+			}
+			
 			// Create command
-			BString command("yes | pkgman drop \"");
+	/*		BString command("yes | pkgman drop \"");
 			command.Append(nameParam).Append("\"");
 			if(fOutfileInit == B_OK)
 			{
@@ -96,13 +168,48 @@ TaskLooper::_DoTask()
 				errorDetails.Append("There was an error disabling the depot ").Append(nameParam).Append("\n");
 				if(fOutfileInit == B_OK)
 					_AddErrorDetails(errorDetails);
-			}
+			}*/
 			break;
 		}
 		case ENABLE_DEPOT: {
 			BString urlParam(fParam);
+			DecisionProvider decisionProvider;
+			JobStateListener listener;
+			BPackageKit::BContext context(decisionProvider, listener);
+			BPackageKit::AddRepositoryRequest request(context, urlParam, false);
+			status_t result = request.Process();
+			if (result != B_OK) {
+				if (result != B_CANCELED) {
+				//	DIE(result, "request for dropping repository \"%s\" failed",
+				//		repoName);
+					returnResult = result;
+					errorDetails.Append("There was an error enabling the depot ").Append(urlParam);
+					errorDetails.Append("\n\nDetails:\n").Append(listener.GetResult());
+					
+				}
+			}
+			else // Continue on to refresh repo cache
+			{
+				BString repoName = request.RepositoryName();
+				BPackageKit::BPackageRoster roster;
+				BPackageKit::BRepositoryConfig repoConfig;
+				roster.GetRepositoryConfig(repoName, &repoConfig);
+				
+				BPackageKit::BRefreshRepositoryRequest refreshRequest(context, repoConfig);
+				result = refreshRequest.Process();
+				if (result != B_OK) {
+					if (result != B_CANCELED) {
+						//DIE(result, "request for refreshing repository \"%s\" failed",
+						//	repoName.String());
+						returnResult = result;
+						errorDetails.Append("There was an error refreshing the depot cache for ").Append(repoName);
+						errorDetails.Append("\n\nDetails:\n").Append(listener.GetResult());
+					}
+				}
+			}
+			
 			// Create command
-			BString command("yes | pkgman add \"");
+	/*		BString command("yes | pkgman add \"");
 			command.Append(urlParam).Append("\"");
 			if(fOutfileInit == B_OK)
 			{
@@ -116,12 +223,12 @@ TaskLooper::_DoTask()
 				errorDetails.Append("There was an error enabling the depot ").Append(urlParam).Append("\n");
 				if(fOutfileInit == B_OK)
 					_AddErrorDetails(errorDetails);
-			}
+			}*/
 			break;
 		}
 	}
 	// Delete temp files
-	if(fOutfileInit == B_OK)
+/*	if(fOutfileInit == B_OK)
 	{
 		BEntry tmpEntry(fPkgmanTaskOut.Path());
 		if(tmpEntry.Exists())
@@ -132,10 +239,10 @@ TaskLooper::_DoTask()
 		if(tmpEntry.Exists())
 			tmpEntry.Remove();
 		tmpEntry.Unset();
-	}
+	}*/
 	
 	// Report completion or errors
-	if(returnResult == 0)
+	if(returnResult == B_OK)
 	{
 		fMsgTarget->PostMessage(TASK_COMPLETE);
 	}
@@ -147,7 +254,7 @@ TaskLooper::_DoTask()
 	}
 }
 
-
+/*
 void
 TaskLooper::_AddErrorDetails(BString &details)
 {
@@ -174,4 +281,4 @@ TaskLooper::_AddErrorDetails(BString &details)
 		details.Append(buffer, bytes);
 	}
 	outFile.Unset();
-}
+}*/
