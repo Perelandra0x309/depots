@@ -140,11 +140,13 @@ DepotsView::DepotsView()
 	BString templateText(kStatusViewText);
 	templateText.Append("88"); // Simulate a status text with two digit queue count
 	fListStatusView = new BStringView("status", templateText);
+	// Set a smaller fixed font size and slightly lighten text color
 	BFont font(be_plain_font);
 	font.SetSize(10.0f);
 	fListStatusView->SetFont(&font, B_FONT_SIZE);
+	fListStatusView->SetHighUIColor(fListStatusView->HighUIColor(), .9f);
+	// Set appropriate explicit view size
 	BSize statusViewSize = fListStatusView->PreferredSize();
-	// Find larger text width
 	float viewWidth = max_c(fListStatusView->StringWidth(templateText), fListStatusView->StringWidth(kStatusCompletedText));
 	statusViewSize.width = viewWidth + 3;
 	statusViewSize.height += 1;
