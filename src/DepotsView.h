@@ -57,7 +57,7 @@ private:
 	BColumnListView			*fListView;
 	BStringView				*fListStatusView;
 	TaskLooper				*fTaskLooper;
-	bool					fIsTaskRunning;
+	bool					fIsTaskRunning, fShowCompletedStatus;
 	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
 	
 	// Message helpers

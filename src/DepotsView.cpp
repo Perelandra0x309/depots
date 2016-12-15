@@ -10,6 +10,7 @@
 #include <FindDirectory.h>
 #include <Layout.h>
 #include <LayoutBuilder.h>
+#include <MessageRunner.h>
 #include <SeparatorView.h>
 #include <StringList.h>
 #include <StringView.h>
@@ -23,16 +24,17 @@
 #define B_TRANSLATION_CONTEXT "DepotsView"
 
 
-const static BString kTitleEnabled = B_TRANSLATE_COMMENT("Enabled", "Column title");
-const static BString kTitleName = B_TRANSLATE_COMMENT("Name", "Column title");
-const static BString kTitleUrl = B_TRANSLATE_COMMENT("URL", "Column title");
-const static BString kLabelRemove = B_TRANSLATE_COMMENT("Remove", "Button label");
-const static BString kLabelRemoveAll = B_TRANSLATE_COMMENT("Remove All", "Button label");
-const static BString kLabelEnable = B_TRANSLATE_COMMENT("Enable", "Button label");
-const static BString kLabelEnableAll = B_TRANSLATE_COMMENT("Enable All", "Button label");
-const static BString kLabelDisable = B_TRANSLATE_COMMENT("Disable", "Button label");
-const static BString kLabelDisableAll = B_TRANSLATE_COMMENT("Disable All", "Button label");
-const static BString kStatusViewText = B_TRANSLATE_COMMENT("Changes pending:", "Status view text");
+static const BString kTitleEnabled = B_TRANSLATE_COMMENT("Enabled", "Column title");
+static const BString kTitleName = B_TRANSLATE_COMMENT("Name", "Column title");
+static const BString kTitleUrl = B_TRANSLATE_COMMENT("URL", "Column title");
+static const BString kLabelRemove = B_TRANSLATE_COMMENT("Remove", "Button label");
+static const BString kLabelRemoveAll = B_TRANSLATE_COMMENT("Remove All", "Button label");
+static const BString kLabelEnable = B_TRANSLATE_COMMENT("Enable", "Button label");
+static const BString kLabelEnableAll = B_TRANSLATE_COMMENT("Enable All", "Button label");
+static const BString kLabelDisable = B_TRANSLATE_COMMENT("Disable", "Button label");
+static const BString kLabelDisableAll = B_TRANSLATE_COMMENT("Disable All", "Button label");
+static const BString kStatusViewText = B_TRANSLATE_COMMENT("Changes pending:", "Status view text");
+static const BString kStatusCompletedText = B_TRANSLATE_COMMENT("Changes completed", "Status view text");
 
 RepoRow::RepoRow(const char* repo_name, const char* repo_url, bool enabled)
 	:
@@ -106,7 +108,8 @@ DepotsView::DepotsView()
 	:
 	BView("depotsview", B_SUPPORTS_LAYOUT),
 	fTaskLooper(NULL),
-	fIsTaskRunning(false)
+	fIsTaskRunning(false),
+	fShowCompletedStatus(false)
 {
 	// Temp file location
 	status_t status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanListOut);
@@ -133,13 +136,15 @@ DepotsView::DepotsView()
 	// Depot list status view
 	BView *statusContainerView = new BView("status", B_SUPPORTS_LAYOUT);
 	BString templateText(kStatusViewText);
-	templateText.Append("88");
+	templateText.Append("88"); // Simulate a status text with two digit queue count
 	fListStatusView = new BStringView("status", templateText);
 	BFont font(be_plain_font);
 	font.SetSize(10.0f);
 	fListStatusView->SetFont(&font, B_FONT_SIZE);
 	BSize statusViewSize = fListStatusView->PreferredSize();
-	statusViewSize.width += 3;
+	// Find larger text width
+	int viewWidth = max_c(fListStatusView->StringWidth(templateText), fListStatusView->StringWidth(kStatusCompletedText));
+	statusViewSize.width = viewWidth + 3;
 	statusViewSize.height += 1;
 	statusContainerView->SetExplicitSize(statusViewSize);
 	BLayoutBuilder::Group<>(statusContainerView, B_VERTICAL, 0)
@@ -335,9 +340,15 @@ DepotsView::MessageReceived(BMessage* msg)
 		}
 		case ITEM_INVOKED: {
 			if(fEnableButton->IsEnabled())
-				MessageReceived(new BMessage(ENABLE_BUTTON_PRESSED));
+			{
+				BMessage invokeMessage(ENABLE_BUTTON_PRESSED);
+				MessageReceived(&invokeMessage);
+			}
 			else if(fDisableButton->IsEnabled())
-				MessageReceived(new BMessage(DISABLE_BUTTON_PRESSED));
+			{
+				BMessage invokeMessage(DISABLE_BUTTON_PRESSED);
+				MessageReceived(&invokeMessage);
+			}
 			break;
 		}
 		case ENABLE_BUTTON_PRESSED: {
@@ -397,6 +408,10 @@ DepotsView::MessageReceived(BMessage* msg)
 			_UpdateButtons();
 			break;
 		}
+		case UPDATE_STATUS: {
+			_UpdateStatusView();
+			break;
+		}
 		default:
 			BView::MessageReceived(msg);
 	}
@@ -453,7 +468,10 @@ DepotsView::_ModelAddToTaskQueue(RepoRow* row)
 	fTaskQueue.AddItem(row);
 	// Only present a status count if there is more than one item in queue
 	if(fTaskQueue.CountItems() > 1)
+	{
 		_UpdateStatusView();
+		fShowCompletedStatus = true;
+	}
 	row->SetTaskState(STATE_IN_QUEUE_WAITING);
 }
 
@@ -478,7 +496,15 @@ DepotsView::_ModelCompleteTask(bool noErrors)
 	if(!fTaskQueue.IsEmpty())
 	{
 		RepoRow* row = fTaskQueue.RemoveItemAt(0);
-		_UpdateStatusView();
+		if(fTaskQueue.IsEmpty() && fShowCompletedStatus)
+		{
+			fListStatusView->SetText(kStatusCompletedText);
+			// Display final status for 3 seconds
+			BMessageRunner *mRunner = new BMessageRunner(this, new BMessage(UPDATE_STATUS), 3000000, 1);
+			fShowCompletedStatus = false;
+		}
+		else
+			_UpdateStatusView();
 		row->SetTaskState(STATE_NOT_IN_QUEUE);
 		if(noErrors)
 			row->SetEnabled(!row->IsEnabled());
