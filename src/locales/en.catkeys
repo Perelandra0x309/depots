@@ -1,4 +1,4 @@
-1	English	application/x-vnd.BH-Depots	631340856
+1	English	application/x-vnd.BH-Depots	3585744379
 The URL must start with a protocol, for example http:// or https://	AddRepoWindow	Add URL error message	The URL must start with a protocol, for example http:// or https://
 Add	AddRepoWindow	Button label	Add
 Depot URL:	AddRepoWindow	Text box label	Depot URL:
@@ -8,6 +8,7 @@ Unknown	Constants	Unknown depot name	Unknown
 Depots preflet version 1.0.1	DepotsApplication	About box line 1	Depots preflet version 1.0.1
 Copyright © 2016 by Brian Hill	DepotsApplication	About box line 2	Copyright © 2016 by Brian Hill
 This preflet will enable and disable depots used in the HaikuDepot application.	DepotsApplication	About box line 3	This preflet will enable and disable depots used in the HaikuDepot application.
+Could not retrieve names of currently enabled depots.	DepotsView	Alert error message	Could not retrieve names of currently enabled depots.
 Disable	DepotsView	Button label	Disable
 Disable All	DepotsView	Button label	Disable All
 Enable	DepotsView	Button label	Enable

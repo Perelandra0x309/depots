@@ -9,7 +9,7 @@ SRCS = ErrorAlert.cpp \
 	DepotsSettings.cpp \
 	Depots.cpp
 
-LIBS = be localestub tracker columnlistview $(STDCPPLIBS)
+LIBS = be localestub package columnlistview $(STDCPPLIBS)
 OPTIMIZE = FULL
 RDEFS = Depots.rdef
 LIBPATHS =

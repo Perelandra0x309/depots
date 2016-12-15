@@ -14,8 +14,10 @@
 #include <SeparatorView.h>
 #include <StringList.h>
 #include <StringView.h>
-#include <stdlib.h>
-#include <stdio.h>
+//#include <stdlib.h>
+//#include <stdio.h>
+#include <package/PackageRoster.h>
+#include <package/RepositoryConfig.h>
 
 #include "constants.h"
 #include "DepotsView.h"
@@ -113,12 +115,12 @@ DepotsView::DepotsView()
 	fShowCompletedStatus(false)
 {
 	// Temp file location
-	status_t status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanListOut);
+/*	status_t status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanListOut);
 	if (status != B_OK)
 		status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanListOut); // alternate location
 	if (status == B_OK) {
 		fPkgmanListOut.Append("pkgman_task");
-	}
+	}*/
 	
 	fListView = new BColumnListView("list", B_NAVIGABLE, B_PLAIN_BORDER);
 	fListView->SetSelectionMessage(new BMessage(LIST_SELECTION_CHANGED));
@@ -612,8 +614,32 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 		}
 	}
 	
-	// Get list of current enabled repositories from pkgman
-	BString command("pkgman list > ");
+	// Get list of current enabled repositories
+	BStringList repositoryNames;
+	BPackageKit::BPackageRoster pRoster;
+	status_t result = pRoster.GetRepositoryNames(repositoryNames);
+	if(result != B_OK)
+	{
+		(new BAlert("error", B_TRANSLATE_COMMENT("Could not retrieve names of currently enabled depots.",
+								"Alert error message"),
+								"OK", NULL, NULL, B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go(NULL);
+		return;
+	}
+	BPackageKit::BRepositoryConfig repoConfig;
+	int index, count = repositoryNames.CountStrings();
+	for(index=0; index < count; index++)
+	{
+		const BString& repoName = repositoryNames.StringAt(index);
+		result = pRoster.GetRepositoryConfig(repoName, &repoConfig);
+		if(result != B_OK)
+		{	//TODO
+			continue;
+		}
+		_AddRepo(repoName, repoConfig.BaseURL(), true);
+	}
+	_SaveList();
+	
+/*	BString command("pkgman list > ");
 	command.Append(fPkgmanListOut.Path());
 	int sysResult = system(command.String());
 //	printf("result=%i", sysResult);
@@ -650,7 +676,7 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 		listFile.Unset();
 		BEntry tmpEntry(fPkgmanListOut.Path());
 		tmpEntry.Remove();
-	}
+	}*/
 }
 
 void

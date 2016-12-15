@@ -52,7 +52,7 @@ public:
 	void					AddManualRepository(BString url);
 	bool					IsTaskRunning() { return fIsTaskRunning; }
 private:
-	BPath					fPkgmanListOut;
+//	BPath					fPkgmanListOut;
 	DepotsSettings			fSettings;
 	BColumnListView			*fListView;
 	BStringView				*fListStatusView;
