@@ -67,9 +67,9 @@ private:
 	
 	// Task queue model
 	BObjectList<RepoRow>	fTaskQueue;
-	void					_ModelAddToTaskQueue(RepoRow* row);
+/*	void					_ModelAddToTaskQueue(RepoRow* row);
 	RepoRow*				_ModelGetNextTask();
-	RepoRow*				_ModelCompleteTask(bool noErrors);
+	RepoRow*				_ModelCompleteTask(bool noErrors);*/
 	
 	// GUI functions
 	BString					_GetRootUrl(BString url);

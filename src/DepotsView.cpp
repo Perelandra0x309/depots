@@ -143,7 +143,7 @@ DepotsView::DepotsView()
 	fListStatusView->SetFont(&font, B_FONT_SIZE);
 	BSize statusViewSize = fListStatusView->PreferredSize();
 	// Find larger text width
-	int viewWidth = max_c(fListStatusView->StringWidth(templateText), fListStatusView->StringWidth(kStatusCompletedText));
+	float viewWidth = max_c(fListStatusView->StringWidth(templateText), fListStatusView->StringWidth(kStatusCompletedText));
 	statusViewSize.width = viewWidth + 3;
 	statusViewSize.height += 1;
 	statusContainerView->SetExplicitSize(statusViewSize);
@@ -389,7 +389,16 @@ DepotsView::_AddSelectedRowsToQueue()
 	RepoRow* rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
 	while(rowItem)
 	{
-		_ModelAddToTaskQueue(rowItem);
+		//_ModelAddToTaskQueue(rowItem);
+		fTaskQueue.AddItem(rowItem);
+		// Only present a status count if there is more than one item in queue
+		if(fTaskQueue.CountItems() > 1)
+		{
+			_UpdateStatusView();
+			fShowCompletedStatus = true;
+		}
+		rowItem->SetTaskState(STATE_IN_QUEUE_WAITING);
+		
 		rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection(rowItem));
 	}
 }
@@ -401,16 +410,18 @@ DepotsView::_StartNextTask()
 	// If tasks are not already running, kick them off
 	if(!fIsTaskRunning)
 	{
-		RepoRow* row = _ModelGetNextTask();
-		if(row != NULL)
-		{
-			if(row->IsEnabled())
-				fTaskLooper->SetTask(DISABLE_DEPOT, row->Name());
-			else
-				fTaskLooper->SetTask(ENABLE_DEPOT, row->Url());
-			fIsTaskRunning = true;
-			fTaskLooper->PostMessage(DO_TASK);
-		}
+		//RepoRow* row = _ModelGetNextTask();
+		if(fTaskQueue.IsEmpty())
+			return;
+		
+		RepoRow* rowItem = fTaskQueue.ItemAt(0);
+		rowItem->SetTaskState(STATE_IN_QUEUE_RUNNING);
+		if(rowItem->IsEnabled())
+			fTaskLooper->SetTask(DISABLE_DEPOT, rowItem->Name());
+		else
+			fTaskLooper->SetTask(ENABLE_DEPOT, rowItem->Url());
+		fIsTaskRunning = true;
+		fTaskLooper->PostMessage(DO_TASK);
 	}
 }
 
@@ -420,13 +431,30 @@ DepotsView::_CompleteRunningTask(bool noErrors)
 {
 	if(fIsTaskRunning)
 	{
-		RepoRow* row = _ModelCompleteTask(noErrors);
-		if(row != NULL)
-			fIsTaskRunning = false;
+		//RepoRow* row = _ModelCompleteTask(noErrors);
+		if(fTaskQueue.IsEmpty())
+			return;
+	
+		RepoRow* rowItem = fTaskQueue.RemoveItemAt(0);
+		if(fTaskQueue.IsEmpty() && fShowCompletedStatus)
+		{
+			fListStatusView->SetText(kStatusCompletedText);
+			// Display final status for 3 seconds
+			BMessageRunner *mRunner = new BMessageRunner(this, new BMessage(UPDATE_STATUS), 3000000, 1);
+			fShowCompletedStatus = false;
+		}
+		else
+			_UpdateStatusView();
+		rowItem->SetTaskState(STATE_NOT_IN_QUEUE);
+		if(noErrors)
+			rowItem->SetEnabled(!rowItem->IsEnabled());
+		else
+			rowItem->RefreshEnabledField();
+		fIsTaskRunning = false;
 	}
 }
 
-
+/*
 void
 DepotsView::_ModelAddToTaskQueue(RepoRow* row)
 {
@@ -479,7 +507,7 @@ DepotsView::_ModelCompleteTask(bool noErrors)
 	}
 	else
 		return NULL;
-}
+}*/
 
 
 void
@@ -595,8 +623,8 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 		off_t size;
 		listFile.GetSize(&size);
 		char buffer[size];
-		listFile.Read(buffer, size);
-		BString text(buffer);
+		size_t bytes = listFile.Read(buffer, size);
+		BString text(buffer, bytes);
 //		printf(text.String());
 		BStringList pkgmanOutput;
 		text.Split("\n", true, pkgmanOutput);
