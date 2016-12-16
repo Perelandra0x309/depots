@@ -21,7 +21,7 @@
 
 #include "constants.h"
 #include "DepotsView.h"
-#include "ErrorAlert.h"
+//#include "ErrorAlert.h"
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "DepotsView"
@@ -360,7 +360,7 @@ DepotsView::MessageReceived(BMessage* msg)
 			status_t result = msg->FindString(key_details, &errorDetails);
 			if(result == B_OK)
 			{// TODO seperate details view?
-				(new ErrorAlert("error", errorDetails, kOKLabel, NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
+				(new BAlert("error", errorDetails, kOKLabel, NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
 			}
 			_StartNextTask();
 			_UpdateButtons();

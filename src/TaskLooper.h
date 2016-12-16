@@ -26,25 +26,16 @@ public:
 
 class JobStateListener : public BSupportKit::BJobStateListener {
 public:
-			enum {
-				EXIT_ON_ERROR	= 0x01,
-				EXIT_ON_ABORT	= 0x02,
-			};
-
-
-public:
-								JobStateListener(){};
+								JobStateListener(){}
 
 	virtual	void				JobStarted(BSupportKit::BJob* job);
-//	virtual	void				JobSucceeded(BSupportKit::BJob* job);
+	virtual	void				JobSucceeded(BSupportKit::BJob* job);
 	virtual	void				JobFailed(BSupportKit::BJob* job);
 	virtual	void				JobAborted(BSupportKit::BJob* job);
-	BString						GetResult(){ return fResultText; }
-	BString						GetJobsStarted();
+	BString						GetJobLog();
 
 private:
-			BString				fResultText;
-			BStringList			fJobTitleList;
+			BStringList			fJobLog;
 };
 
 
@@ -60,6 +51,7 @@ private:
 	int32					fWhat, fOutfileInit;
 	bool					fQuitWasRequested;
 	void					_DoTask();
+	void					_AppendErrorDetails(BString &details, JobStateListener *listener);
 //	void					_AddErrorDetails(BString &details);
 	BLooper					*fMsgTarget;
 };

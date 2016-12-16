@@ -2,6 +2,7 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
+#include <Alert.h>
 #include <Catalog.h>
 #include <File.h>
 #include <FindDirectory.h>
@@ -16,8 +17,16 @@
 #include "constants.h"
 #include "TaskLooper.h"
 
+#define DEBUGTASK 0
+
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "TaskLooper"
+
+static const BString kLogResultIndicator = "***";
+static const BString kCompletedText = B_TRANSLATE_COMMENT("Completed", "Completed task status message");
+static const BString kFailedText = B_TRANSLATE_COMMENT("Failed", "Failed task status message");
+static const BString kAbortedText = B_TRANSLATE_COMMENT("Aborted", "Aborted task status message");
+static const BString kDescriptionText = B_TRANSLATE_COMMENT("Description", "Failed task error description");
 
 using BSupportKit::BJob;
 
@@ -25,42 +34,52 @@ using BSupportKit::BJob;
 void
 JobStateListener::JobStarted(BJob* job)
 {
-	fJobTitleList.Add(job->Title());
+	fJobLog.Add(job->Title());
 }
 
-/*
+
 void
 JobStateListener::JobSucceeded(BJob* job)
 {
+	BString resultText(kLogResultIndicator);
+	fJobLog.Add(resultText.Append(kCompletedText));
 }
-*/
+
 
 void
 JobStateListener::JobFailed(BJob* job)
 {
-	fResultText.SetTo("\n***Failed: ");
-	fResultText.Append(strerror(job->Result()));
+	BString resultText(kLogResultIndicator);
+	resultText.Append(kFailedText).Append(": ").Append(strerror(job->Result()));
+	fJobLog.Add(resultText);
 	if(job->ErrorString().Length() > 0)
-		fResultText.Append("\n***Description: ").Append(job->ErrorString());
+	{
+		resultText.SetTo(kLogResultIndicator);
+		resultText.Append(kDescriptionText).Append(": ").Append(job->ErrorString());
+		fJobLog.Add(resultText);
+	}
 }
 
 
 void
 JobStateListener::JobAborted(BJob* job)
 {
-	fResultText.SetTo("\n***Aborted: ");
-	fResultText.Append(strerror(job->Result()));
+	BString resultText(kLogResultIndicator);
+	resultText.Append(kAbortedText).Append(": ").Append(strerror(job->Result()));
+	fJobLog.Add(resultText);
 	if(job->ErrorString().Length() > 0)
-		fResultText.Append("\n***Description: ").Append(job->ErrorString());
+	{
+		resultText.SetTo(kLogResultIndicator);
+		resultText.Append(kDescriptionText).Append(": ").Append(job->ErrorString());
+		fJobLog.Add(resultText);
+	}
 }
 
 
 BString
-JobStateListener::GetJobsStarted()
+JobStateListener::GetJobLog()
 {
-	BString delim("\n***");
-	delim.Append(B_TRANSLATE_COMMENT("Completed", "Completed task status message")).Append("\n");
-	return fJobTitleList.Join(delim);
+	return fJobLog.Join("\n");
 }
 
 
@@ -87,10 +106,7 @@ bool
 TaskLooper::QuitRequested()
 {	
 	fQuitWasRequested = true;
-	if(MessageQueue()->IsEmpty() && CountLockRequests() == 0)
-		return true;
-	else
-		return false;
+	return MessageQueue()->IsEmpty();
 }
 
 
@@ -118,7 +134,7 @@ TaskLooper::SetTask(int32 what, BString param)
 void
 TaskLooper::_DoTask()
 {
-	// check if quit requested
+	// Check if quit requested
 	if(fQuitWasRequested)
 	{
 		fMsgTarget->PostMessage(TASK_CANCELED);// TODO what happens?
@@ -127,21 +143,19 @@ TaskLooper::_DoTask()
 	
 	BString errorDetails;
 	status_t returnResult = B_OK;
+	DecisionProvider decisionProvider;
+	JobStateListener listener;
 	switch(fWhat){
 		case DISABLE_DEPOT: {
 			BString nameParam(fParam);
-			DecisionProvider decisionProvider;
-			JobStateListener listener;
 			BPackageKit::BContext context(decisionProvider, listener);
-			BPackageKit::DropRepositoryRequest request(context, nameParam);
-			status_t result = request.Process();
+			BPackageKit::DropRepositoryRequest dropRequest(context, nameParam);
+			status_t result = dropRequest.Process();
 			if (result != B_OK) {
 				returnResult = result;
 				if (result != B_CANCELED) {
 					errorDetails.Append("There was an error disabling the depot ").Append(nameParam);
-					errorDetails.Append("\n\nDetails:\n");
-					errorDetails.Append(listener.GetJobsStarted());
-					errorDetails.Append(listener.GetResult());
+					_AppendErrorDetails(errorDetails, &listener);
 					
 				}
 			}
@@ -166,38 +180,31 @@ TaskLooper::_DoTask()
 		}
 		case ENABLE_DEPOT: {
 			BString urlParam(fParam);
-			DecisionProvider decisionProvider;
-			JobStateListener listener;
 			BPackageKit::BContext context(decisionProvider, listener);
 			// Add repository
 			bool asUserRepository = false; //TODO does this ever change?
-			BPackageKit::AddRepositoryRequest request(context, urlParam, asUserRepository);
-			status_t result = request.Process();
+			BPackageKit::AddRepositoryRequest addRequest(context, urlParam, asUserRepository);
+			status_t result = addRequest.Process();
 			if (result != B_OK) {
 				returnResult = result;
 				if (result != B_CANCELED) {
 					errorDetails.Append("There was an error enabling the depot ").Append(urlParam);
-					errorDetails.Append("\n\nDetails:\n");
-					errorDetails.Append(listener.GetJobsStarted());
-					errorDetails.Append(listener.GetResult());
+					_AppendErrorDetails(errorDetails, &listener);
 				}
 				break;
 			}
 			// Continue on to refresh repo cache
-			BString repoName = request.RepositoryName();
+			BString repoName = addRequest.RepositoryName();
 			BPackageKit::BPackageRoster roster;
 			BPackageKit::BRepositoryConfig repoConfig;
 			roster.GetRepositoryConfig(repoName, &repoConfig);
-			
 			BPackageKit::BRefreshRepositoryRequest refreshRequest(context, repoConfig);
 			result = refreshRequest.Process();
 			if (result != B_OK) {
 				returnResult = result;
 				if (result != B_CANCELED) {
 					errorDetails.Append("There was an error refreshing the depot cache for ").Append(repoName);
-					errorDetails.Append("\n\nDetails:\n");
-					errorDetails.Append(listener.GetJobsStarted());
-					errorDetails.Append(listener.GetResult());
+					_AppendErrorDetails(errorDetails, &listener);
 				}
 			}
 			
@@ -234,7 +241,7 @@ TaskLooper::_DoTask()
 		tmpEntry.Unset();
 	}*/
 	
-	// Report completion or errors
+	// Report completion status
 	if(returnResult == B_OK)
 	{
 		fMsgTarget->PostMessage(TASK_COMPLETE);
@@ -249,8 +256,23 @@ TaskLooper::_DoTask()
 		reply.AddString(key_details, errorDetails);
 		fMsgTarget->PostMessage(&reply);
 	}
+#if DEBUGTASK
+	if(returnResult == B_OK || returnResult == B_CANCELED)
+	{
+		BString degubDetails("Debug info:\n");
+		degubDetails.Append(listener.GetJobLog());
+		(new BAlert("debug", degubDetails, "OK"))->Go(NULL);
+	}
+#endif //DEBUGTASK
 }
 
+
+void
+TaskLooper::_AppendErrorDetails(BString &details, JobStateListener *listener)
+{
+	details.Append("\n\nDetails:\n");
+	details.Append(listener->GetJobLog());
+}
 /*
 void
 TaskLooper::_AddErrorDetails(BString &details)
