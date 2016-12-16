@@ -122,6 +122,7 @@ DepotsView::DepotsView()
 		fPkgmanListOut.Append("pkgman_task");
 	}*/
 	
+	// Column list view with 3 columns
 	fListView = new BColumnListView("list", B_NAVIGABLE, B_PLAIN_BORDER);
 	fListView->SetSelectionMessage(new BMessage(LIST_SELECTION_CHANGED));
 	float col0width = be_plain_font->StringWidth(kTitleEnabled) + 15;
@@ -160,18 +161,16 @@ DepotsView::DepotsView()
 		.Add(new BSeparatorView(B_HORIZONTAL));
 	fListView->AddStatusView(statusContainerView);
 	
-	
+	// Standard buttons
 	fEnableButton = new BButton(kLabelEnable, new BMessage(ENABLE_BUTTON_PRESSED));
 	fDisableButton = new BButton(kLabelDisable, new BMessage(DISABLE_BUTTON_PRESSED));
 	
-#if USE_MINIMAL_BUTTONS
-	// ---Minimal buttons option---
+	// Create buttons with fixed size
 	font_height fontHeight;
 	GetFontHeight(&fontHeight);
 	int buttonHeight = int(fontHeight.ascent + fontHeight.descent + 12); // button size determined by font size
 	BSize btnSize(buttonHeight,buttonHeight);
 	
-	// Create buttons with fixed size
 	fAddButton = new BButton("plus", "+", new BMessage(ADD_REPO_WINDOW));
 	fAddButton->SetExplicitSize(btnSize);
 	fRemoveButton = new BButton("minus", "-", new BMessage(REMOVE_REPOS));
@@ -179,11 +178,12 @@ DepotsView::DepotsView()
 	fAboutButton = new BButton("about", "?", new BMessage(SHOW_ABOUT));
 	fAboutButton->SetExplicitSize(btnSize);
 	
+	// Layout
 	int buttonSpacing = 1;
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
 		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
 		.AddGroup(B_HORIZONTAL, 0, 0.0)
-			.Add(new BStringView("instruction", B_TRANSLATE_COMMENT("Select depots to use in HaikuDepot:", "Label text")), 0.0)
+			.Add(new BStringView("instruction", B_TRANSLATE_COMMENT("Select depots to use with Haiku package management:", "Label text")), 0.0)
 			.AddGlue()
 			.Add(fAboutButton, 0.0)
 		.End()
@@ -214,40 +214,6 @@ DepotsView::DepotsView()
 				.Add(fDisableButton)
 			.End()
 		.End();
-	// ---End minimal buttons section---
-#else
-	
-		// ---Standard buttons option---
-	font_height fontHeight;
-	GetFontHeight(&fontHeight);
-	int buttonSize = int(fontHeight.ascent + fontHeight.descent + 12); // button size determined by font size
-	
-	fAddButton = new BButton(B_TRANSLATE_COMMENT("Add" B_UTF8_ELLIPSIS, "Button label"),
-							new BMessage(ADD_REPO_WINDOW));
-	fRemoveButton = new BButton(fLabelRemove, new BMessage(REMOVE_REPOS));
-	
-	fAboutButton = new BButton("about", "?", new BMessage(SHOW_ABOUT));
-	fAboutButton->SetExplicitSize(BSize(buttonSize, buttonSize));
-	
-	BLayoutBuilder::Group<>(this, B_VERTICAL, B_USE_DEFAULT_SPACING)
-		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
-		.AddGroup(B_HORIZONTAL, 0, 0.0)
-			.Add(new BStringView("instruction", B_TRANSLATE_COMMENT("Select depots to use in HaikuDepot:", "Label text")), 0.0)
-			.AddGlue()
-			.Add(fAboutButton, 0.0)
-		.End()
-		.AddStrut(3)
-		.Add(fListView)
-		.AddGroup(B_HORIZONTAL)
-			.Add(fAddButton)
-			.Add(fRemoveButton)
-			.AddGlue()
-			.Add(fEnableButton)
-			.Add(fDisableButton)
-		.End();
-	// -- End standard buttons section
-#endif //USE_MINIMAL_BUTTONS
-
 }
 
 
@@ -393,7 +359,6 @@ DepotsView::_AddSelectedRowsToQueue()
 	RepoRow* rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
 	while(rowItem)
 	{
-		//_ModelAddToTaskQueue(rowItem);
 		fTaskQueue.AddItem(rowItem);
 		// Only present a status count if there is more than one item in queue
 		if(fTaskQueue.CountItems() > 1)
@@ -414,7 +379,6 @@ DepotsView::_StartNextTask()
 	// If tasks are not already running, kick them off
 	if(!fIsTaskRunning)
 	{
-		//RepoRow* row = _ModelGetNextTask();
 		if(fTaskQueue.IsEmpty())
 			return;
 		
@@ -435,7 +399,6 @@ DepotsView::_CompleteRunningTask(bool noErrors)
 {
 	if(fIsTaskRunning)
 	{
-		//RepoRow* row = _ModelCompleteTask(noErrors);
 		if(fTaskQueue.IsEmpty())
 			return;
 	
@@ -457,61 +420,6 @@ DepotsView::_CompleteRunningTask(bool noErrors)
 		fIsTaskRunning = false;
 	}
 }
-
-/*
-void
-DepotsView::_ModelAddToTaskQueue(RepoRow* row)
-{
-	fTaskQueue.AddItem(row);
-	// Only present a status count if there is more than one item in queue
-	if(fTaskQueue.CountItems() > 1)
-	{
-		_UpdateStatusView();
-		fShowCompletedStatus = true;
-	}
-	row->SetTaskState(STATE_IN_QUEUE_WAITING);
-}
-
-
-RepoRow*
-DepotsView::_ModelGetNextTask()
-{
-	if(!fTaskQueue.IsEmpty())
-	{
-		RepoRow* row = fTaskQueue.ItemAt(0);
-		row->SetTaskState(STATE_IN_QUEUE_RUNNING);
-		return row;
-	}
-	else
-		return NULL;
-}
-
-
-RepoRow*
-DepotsView::_ModelCompleteTask(bool noErrors)
-{
-	if(!fTaskQueue.IsEmpty())
-	{
-		RepoRow* row = fTaskQueue.RemoveItemAt(0);
-		if(fTaskQueue.IsEmpty() && fShowCompletedStatus)
-		{
-			fListStatusView->SetText(kStatusCompletedText);
-			// Display final status for 3 seconds
-			BMessageRunner *mRunner = new BMessageRunner(this, new BMessage(UPDATE_STATUS), 3000000, 1);
-			fShowCompletedStatus = false;
-		}
-		else
-			_UpdateStatusView();
-		row->SetTaskState(STATE_NOT_IN_QUEUE);
-		if(noErrors)
-			row->SetEnabled(!row->IsEnabled());
-		else
-			row->RefreshEnabledField();
-		return row;
-	}
-	else
-		return NULL;
-}*/
 
 
 void
@@ -703,7 +611,6 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 	// URL must have a protocol
 	if(url.FindFirst("://") == B_ERROR)
 		return NULL;
-//	printf("Adding:%s:%s\n", name.String(), url.String());
 	RepoRow *addedRow=NULL;
 	int32 index;
 	int32 listCount = fListView->CountRows();

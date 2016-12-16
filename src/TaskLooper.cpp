@@ -27,6 +27,7 @@ static const BString kCompletedText = B_TRANSLATE_COMMENT("Completed", "Complete
 static const BString kFailedText = B_TRANSLATE_COMMENT("Failed", "Failed task status message");
 static const BString kAbortedText = B_TRANSLATE_COMMENT("Aborted", "Aborted task status message");
 static const BString kDescriptionText = B_TRANSLATE_COMMENT("Description", "Failed task error description");
+static const BString kDetailsText = B_TRANSLATE_COMMENT("Details", "Job log details header");
 
 using BSupportKit::BJob;
 
@@ -270,7 +271,7 @@ TaskLooper::_DoTask()
 void
 TaskLooper::_AppendErrorDetails(BString &details, JobStateListener *listener)
 {
-	details.Append("\n\nDetails:\n");
+	details.Append("\n\n").Append(kDetailsText).Append(":\n");
 	details.Append(listener->GetJobLog());
 }
 /*

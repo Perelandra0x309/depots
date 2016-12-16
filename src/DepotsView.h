@@ -57,6 +57,7 @@ private:
 	BColumnListView			*fListView;
 	BStringView				*fListStatusView;
 	TaskLooper				*fTaskLooper;
+	BObjectList<RepoRow>	fTaskQueue;
 	bool					fIsTaskRunning, fShowCompletedStatus;
 	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
 	
@@ -64,12 +65,6 @@ private:
 	void					_AddSelectedRowsToQueue();
 	void					_StartNextTask();
 	void					_CompleteRunningTask(bool noErrors);
-	
-	// Task queue model
-	BObjectList<RepoRow>	fTaskQueue;
-/*	void					_ModelAddToTaskQueue(RepoRow* row);
-	RepoRow*				_ModelGetNextTask();
-	RepoRow*				_ModelCompleteTask(bool noErrors);*/
 	
 	// GUI functions
 	BString					_GetRootUrl(BString url);
