@@ -111,6 +111,7 @@ DepotsView::DepotsView()
 	:
 	BView("depotsview", B_SUPPORTS_LAYOUT),
 	fTaskLooper(NULL),
+	fTaskTimer(10),
 	fIsTaskRunning(false),
 	fShowCompletedStatus(false)
 {
@@ -390,6 +391,7 @@ DepotsView::_StartNextTask()
 			fTaskLooper->SetTask(ENABLE_DEPOT, rowItem->Url());
 		fIsTaskRunning = true;
 		fTaskLooper->PostMessage(DO_TASK);
+		fTaskTimer.Start();
 	}
 }
 

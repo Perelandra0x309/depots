@@ -14,6 +14,7 @@
 
 #include "DepotsSettings.h"
 #include "TaskLooper.h"
+#include "TaskTimer.h"
 
 enum {
 	kEnabledColumn,
@@ -58,6 +59,7 @@ private:
 	BStringView				*fListStatusView;
 	TaskLooper				*fTaskLooper;
 	BObjectList<RepoRow>	fTaskQueue;
+	TaskTimer				fTaskTimer;
 	bool					fIsTaskRunning, fShowCompletedStatus;
 	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
 	

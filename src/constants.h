@@ -58,7 +58,8 @@ enum {
 	SHOW_ABOUT,
 	NO_TASKS,
 	ENABLE_DEPOT,
-	DISABLE_DEPOT
+	DISABLE_DEPOT,
+	TASK_TIMEOUT
 };
 
 // Repo row task state
