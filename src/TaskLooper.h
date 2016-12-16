@@ -9,6 +9,7 @@
 #include <Looper.h>
 #include <Path.h>
 #include <String.h>
+#include <StringList.h>
 #include <package/Context.h>
 
 
@@ -32,19 +33,18 @@ public:
 
 
 public:
-								JobStateListener(
-									uint32 flags = EXIT_ON_ERROR
-										| EXIT_ON_ABORT);
+								JobStateListener(){};
 
-//	virtual	void				JobStarted(BSupportKit::BJob* job);
+	virtual	void				JobStarted(BSupportKit::BJob* job);
 //	virtual	void				JobSucceeded(BSupportKit::BJob* job);
 	virtual	void				JobFailed(BSupportKit::BJob* job);
 	virtual	void				JobAborted(BSupportKit::BJob* job);
 	BString						GetResult(){ return fResultText; }
+	BString						GetJobsStarted();
 
 private:
-			uint32				fFlags;
 			BString				fResultText;
+			BStringList			fJobTitleList;
 };
 
 

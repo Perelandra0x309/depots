@@ -22,20 +22,13 @@
 using BSupportKit::BJob;
 
 
-JobStateListener::JobStateListener(uint32 flags)
-	:
-	fFlags(flags)
-{
-}
-
-/*
 void
 JobStateListener::JobStarted(BJob* job)
 {
-	//printf("%s ...\n", job->Title().String());
+	fJobTitleList.Add(job->Title());
 }
 
-
+/*
 void
 JobStateListener::JobSucceeded(BJob* job)
 {
@@ -45,29 +38,29 @@ JobStateListener::JobSucceeded(BJob* job)
 void
 JobStateListener::JobFailed(BJob* job)
 {
-	fResultText.SetTo("Result=");
-	fResultText<<strerror(job->Result());
+	fResultText.SetTo("\n***Failed: ");
+	fResultText.Append(strerror(job->Result()));
 	if(job->ErrorString().Length() > 0)
-		fResultText.Append("\nDescription=").Append(job->ErrorString());
-/*	BString error = job->ErrorString();
-	if (error.Length() > 0) {
-		error.ReplaceAll("\n", "\n*** ");
-		fprintf(stderr, "%s", error.String());
-	}
-	if ((fFlags & EXIT_ON_ERROR) != 0)
-		DIE(job->Result(), "failed!");*/
+		fResultText.Append("\n***Description: ").Append(job->ErrorString());
 }
 
 
 void
 JobStateListener::JobAborted(BJob* job)
 {
-	fResultText.SetTo("Result=");
-	fResultText<<strerror(job->Result());
+	fResultText.SetTo("\n***Aborted: ");
+	fResultText.Append(strerror(job->Result()));
 	if(job->ErrorString().Length() > 0)
-		fResultText.Append("\nDescription=").Append(job->ErrorString());
-//	if ((fFlags & EXIT_ON_ABORT) != 0)
-//		DIE(job->Result(), "aborted");
+		fResultText.Append("\n***Description: ").Append(job->ErrorString());
+}
+
+
+BString
+JobStateListener::GetJobsStarted()
+{
+	BString delim("\n***");
+	delim.Append(B_TRANSLATE_COMMENT("Completed", "Completed task status message")).Append("\n");
+	return fJobTitleList.Join(delim);
 }
 
 
@@ -133,7 +126,7 @@ TaskLooper::_DoTask()
 	}
 	
 	BString errorDetails;
-	status_t returnResult = 0;
+	status_t returnResult = B_OK;
 	switch(fWhat){
 		case DISABLE_DEPOT: {
 			BString nameParam(fParam);
@@ -143,12 +136,12 @@ TaskLooper::_DoTask()
 			BPackageKit::DropRepositoryRequest request(context, nameParam);
 			status_t result = request.Process();
 			if (result != B_OK) {
+				returnResult = result;
 				if (result != B_CANCELED) {
-				//	DIE(result, "request for dropping repository \"%s\" failed",
-				//		repoName);
-					returnResult = result;
 					errorDetails.Append("There was an error disabling the depot ").Append(nameParam);
-					errorDetails.Append("\n\nDetails:\n").Append(listener.GetResult());
+					errorDetails.Append("\n\nDetails:\n");
+					errorDetails.Append(listener.GetJobsStarted());
+					errorDetails.Append(listener.GetResult());
 					
 				}
 			}
@@ -176,35 +169,35 @@ TaskLooper::_DoTask()
 			DecisionProvider decisionProvider;
 			JobStateListener listener;
 			BPackageKit::BContext context(decisionProvider, listener);
-			BPackageKit::AddRepositoryRequest request(context, urlParam, false);
+			// Add repository
+			bool asUserRepository = false; //TODO does this ever change?
+			BPackageKit::AddRepositoryRequest request(context, urlParam, asUserRepository);
 			status_t result = request.Process();
 			if (result != B_OK) {
+				returnResult = result;
 				if (result != B_CANCELED) {
-				//	DIE(result, "request for dropping repository \"%s\" failed",
-				//		repoName);
-					returnResult = result;
 					errorDetails.Append("There was an error enabling the depot ").Append(urlParam);
-					errorDetails.Append("\n\nDetails:\n").Append(listener.GetResult());
-					
+					errorDetails.Append("\n\nDetails:\n");
+					errorDetails.Append(listener.GetJobsStarted());
+					errorDetails.Append(listener.GetResult());
 				}
+				break;
 			}
-			else // Continue on to refresh repo cache
-			{
-				BString repoName = request.RepositoryName();
-				BPackageKit::BPackageRoster roster;
-				BPackageKit::BRepositoryConfig repoConfig;
-				roster.GetRepositoryConfig(repoName, &repoConfig);
-				
-				BPackageKit::BRefreshRepositoryRequest refreshRequest(context, repoConfig);
-				result = refreshRequest.Process();
-				if (result != B_OK) {
-					if (result != B_CANCELED) {
-						//DIE(result, "request for refreshing repository \"%s\" failed",
-						//	repoName.String());
-						returnResult = result;
-						errorDetails.Append("There was an error refreshing the depot cache for ").Append(repoName);
-						errorDetails.Append("\n\nDetails:\n").Append(listener.GetResult());
-					}
+			// Continue on to refresh repo cache
+			BString repoName = request.RepositoryName();
+			BPackageKit::BPackageRoster roster;
+			BPackageKit::BRepositoryConfig repoConfig;
+			roster.GetRepositoryConfig(repoName, &repoConfig);
+			
+			BPackageKit::BRefreshRepositoryRequest refreshRequest(context, repoConfig);
+			result = refreshRequest.Process();
+			if (result != B_OK) {
+				returnResult = result;
+				if (result != B_CANCELED) {
+					errorDetails.Append("There was an error refreshing the depot cache for ").Append(repoName);
+					errorDetails.Append("\n\nDetails:\n");
+					errorDetails.Append(listener.GetJobsStarted());
+					errorDetails.Append(listener.GetResult());
 				}
 			}
 			
@@ -245,6 +238,10 @@ TaskLooper::_DoTask()
 	if(returnResult == B_OK)
 	{
 		fMsgTarget->PostMessage(TASK_COMPLETE);
+	}
+	else if(returnResult == B_CANCELED)
+	{
+		fMsgTarget->PostMessage(TASK_CANCELED);
 	}
 	else
 	{
