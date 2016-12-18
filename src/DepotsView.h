@@ -59,14 +59,14 @@ private:
 	BStringView				*fListStatusView;
 	TaskLooper				*fTaskLooper;
 	BObjectList<RepoRow>	fTaskQueue;
-	TaskTimer				fTaskTimer;
+	TaskTimer				*fTaskTimer;
 	bool					fIsTaskRunning, fShowCompletedStatus;
 	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
 	
 	// Message helpers
 	void					_AddSelectedRowsToQueue();
 	void					_StartNextTask();
-	void					_CompleteRunningTask(bool noErrors);
+	void					_CompleteRunningTask(bool noErrors, BString& name);
 	
 	// GUI functions
 	BString					_GetRootUrl(BString url);

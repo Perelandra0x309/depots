@@ -16,7 +16,7 @@ static const int kAddWindowOffset = 10;
 static const BString kOKLabel = B_TRANSLATE_COMMENT("OK", "Button label");
 static const BString kCancelLabel = B_TRANSLATE_COMMENT("Cancel", "Button label");
 static const BString kWebsiteUrl = "http://perelandra0x309.github.io/depots";
-static const BString kNewRepoName = B_TRANSLATE_COMMENT("Unknown", "Unknown depot name");
+static const BString kNewRepoDefaultName = B_TRANSLATE_COMMENT("Unknown", "Unknown depot name");
 
 typedef struct {
 	const char* name;
@@ -59,7 +59,8 @@ enum {
 	NO_TASKS,
 	ENABLE_DEPOT,
 	DISABLE_DEPOT,
-	TASK_TIMEOUT
+	TASK_TIMEOUT,
+	TIMEOUT_ALERT_BUTTON_SELECTION
 };
 
 // Repo row task state

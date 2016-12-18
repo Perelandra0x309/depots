@@ -111,7 +111,6 @@ DepotsView::DepotsView()
 	:
 	BView("depotsview", B_SUPPORTS_LAYOUT),
 	fTaskLooper(NULL),
-	fTaskTimer(10),
 	fIsTaskRunning(false),
 	fShowCompletedStatus(false)
 {
@@ -225,6 +224,11 @@ DepotsView::~DepotsView()
 		fTaskLooper->Lock();
 		fTaskLooper->Quit();
 	}
+	if(fTaskTimer)
+	{
+		fTaskTimer->Lock();
+		fTaskTimer->Quit();
+	}
 	_Clean();
 }
 
@@ -249,6 +253,8 @@ void
 DepotsView::AttachedToWindow()
 {
 	fTaskLooper = new TaskLooper(Window());
+	fTaskTimer = new TaskTimer(10);
+	fTaskTimer->Init();
 }
 
 
@@ -294,7 +300,7 @@ DepotsView::MessageReceived(BMessage* msg)
 			RepoRow* rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
 			while(rowItem)
 			{
-				if(names.HasString(rowItem->Name()) && kNewRepoName.Compare(rowItem->Name()) != 0)
+				if(names.HasString(rowItem->Name()) && kNewRepoDefaultName.Compare(rowItem->Name()) != 0)
 				{
 					(new BAlert("duplicate", B_TRANSLATE_COMMENT("You can only enable one URL for "
 									"each depot.  Please change your selections.", "Error message"),
@@ -322,7 +328,8 @@ DepotsView::MessageReceived(BMessage* msg)
 			break;
 		}
 		case TASK_COMPLETE_WITH_ERRORS: {
-			_CompleteRunningTask(false);
+			BString repoName = msg->GetString(key_name, kNewRepoDefaultName.String());
+			_CompleteRunningTask(false, repoName);
 			BString errorDetails;
 			status_t result = msg->FindString(key_details, &errorDetails);
 			if(result == B_OK)
@@ -334,11 +341,16 @@ DepotsView::MessageReceived(BMessage* msg)
 			break;
 		}
 		case TASK_COMPLETE: {
-			_CompleteRunningTask(true);
+			BString repoName = msg->GetString(key_name, kNewRepoDefaultName.String());
+			_CompleteRunningTask(true, repoName);
 			_StartNextTask();
 			_UpdateButtons();
 			break;
 		}
+/*		case TASK_TIMEOUT: {
+			(new BAlert("timeout", "Task timed out.", "OK"))->Go(NULL);
+			break;
+		}*/
 		case UPDATE_LIST: {
 			_UpdatePkgmanList(true);
 			_UpdateButtons();
@@ -391,34 +403,39 @@ DepotsView::_StartNextTask()
 			fTaskLooper->SetTask(ENABLE_DEPOT, rowItem->Url());
 		fIsTaskRunning = true;
 		fTaskLooper->PostMessage(DO_TASK);
-		fTaskTimer.Start();
+		fTaskTimer->Start(rowItem->Name());
 	}
 }
 
 
 void
-DepotsView::_CompleteRunningTask(bool noErrors)
+DepotsView::_CompleteRunningTask(bool noErrors, BString& name)
 {
 	if(fIsTaskRunning)
 	{
 		if(fTaskQueue.IsEmpty())
 			return;
-	
+		
 		RepoRow* rowItem = fTaskQueue.RemoveItemAt(0);
+		fTaskTimer->Stop(rowItem->Name());
+		// If this is the last task show completed status text for 3 seconds
 		if(fTaskQueue.IsEmpty() && fShowCompletedStatus)
 		{
 			fListStatusView->SetText(kStatusCompletedText);
-			// Display final status for 3 seconds
 			BMessageRunner *mRunner = new BMessageRunner(this, new BMessage(UPDATE_STATUS), 3000000, 1);
 			fShowCompletedStatus = false;
 		}
 		else
 			_UpdateStatusView();
+		// Update row values
 		rowItem->SetTaskState(STATE_NOT_IN_QUEUE);
 		if(noErrors)
 			rowItem->SetEnabled(!rowItem->IsEnabled());
 		else
 			rowItem->RefreshEnabledField();
+		// Update a new repository name
+		if(kNewRepoDefaultName.Compare(rowItem->Name()) == 0 && name.Compare("") != 0)
+			rowItem->SetName(name.String());
 		fIsTaskRunning = false;
 	}
 }
@@ -427,7 +444,7 @@ DepotsView::_CompleteRunningTask(bool noErrors)
 void
 DepotsView::AddManualRepository(BString url)
 {
-	BString name(kNewRepoName);
+	BString name(kNewRepoDefaultName);
 	BString rootUrl = _GetRootUrl(url);
 	bool foundRoot = false;
 	int32 index;
@@ -673,17 +690,11 @@ DepotsView::_UpdateButtons()
 		// Change button labels depending on which rows are selected
 		if(selectedCount>1)
 		{
-#if !USE_MINIMAL_BUTTONS
-			fRemoveButton->SetLabel(kLabelRemoveAll);
-#endif
 			fEnableButton->SetLabel(kLabelEnableAll);
 			fDisableButton->SetLabel(kLabelDisableAll);
 		}
 		else
 		{
-#if !USE_MINIMAL_BUTTONS
-			fRemoveButton->SetLabel(kLabelRemove);
-#endif
 			fEnableButton->SetLabel(kLabelEnable);
 			fDisableButton->SetLabel(kLabelDisable);
 		}
@@ -705,9 +716,6 @@ DepotsView::_UpdateButtons()
 	// No selected rows
 	else
 	{
-#if !USE_MINIMAL_BUTTONS
-		fRemoveButton->SetLabel(kLabelRemove);
-#endif
 		fEnableButton->SetLabel(kLabelEnable);
 		fDisableButton->SetLabel(kLabelDisable);
 		fEnableButton->SetEnabled(false);

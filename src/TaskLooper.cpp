@@ -142,7 +142,7 @@ TaskLooper::_DoTask()
 		return;
 	}
 	
-	BString errorDetails;
+	BString errorDetails, repoName("");
 	status_t returnResult = B_OK;
 	DecisionProvider decisionProvider;
 	JobStateListener listener;
@@ -195,7 +195,7 @@ TaskLooper::_DoTask()
 				break;
 			}
 			// Continue on to refresh repo cache
-			BString repoName = addRequest.RepositoryName();
+			repoName = addRequest.RepositoryName();
 			BPackageKit::BPackageRoster roster;
 			BPackageKit::BRepositoryConfig repoConfig;
 			roster.GetRepositoryConfig(repoName, &repoConfig);
@@ -245,7 +245,11 @@ TaskLooper::_DoTask()
 	// Report completion status
 	if(returnResult == B_OK)
 	{
-		fMsgTarget->PostMessage(TASK_COMPLETE);
+		BMessage reply(TASK_COMPLETE);
+		// Add the repo name if we need to update the list row value
+		if(fWhat == ENABLE_DEPOT)
+			reply.AddString(key_name, repoName);
+		fMsgTarget->PostMessage(&reply);
 	}
 	else if(returnResult == B_CANCELED)
 	{
@@ -255,6 +259,8 @@ TaskLooper::_DoTask()
 	{
 		BMessage reply(TASK_COMPLETE_WITH_ERRORS);
 		reply.AddString(key_details, errorDetails);
+		if(fWhat == ENABLE_DEPOT)
+			reply.AddString(key_name, repoName);
 		fMsgTarget->PostMessage(&reply);
 	}
 #if DEBUGTASK
