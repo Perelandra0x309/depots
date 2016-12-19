@@ -38,7 +38,7 @@ static const BString kLabelDisable = B_TRANSLATE_COMMENT("Disable", "Button labe
 static const BString kLabelDisableAll = B_TRANSLATE_COMMENT("Disable All", "Button label");
 static const BString kStatusViewText = B_TRANSLATE_COMMENT("Changes pending:", "Status view text");
 static const BString kStatusCompletedText = B_TRANSLATE_COMMENT("Changes completed", "Status view text");
-
+/*
 RepoRow::RepoRow(const char* repo_name, const char* repo_url, bool enabled)
 	:
 	BRow(),
@@ -94,18 +94,9 @@ RepoRow::SetTaskState(uint32 state)
 			Invalidate();
 			break;
 		}
-	/*	case STATE_IN_QUEUE_RUNNING: {
-			BStringField *field = (BStringField*)GetField(kEnabledColumn);
-			if(IsEnabled())
-				field->SetString(B_TRANSLATE("Disabling..."));
-			else
-				field->SetString(B_TRANSLATE("Enabling..."));
-			Invalidate();
-			break;
-		}*/
 	}
 }
-
+*/
 
 DepotsView::DepotsView()
 	:
@@ -224,11 +215,11 @@ DepotsView::~DepotsView()
 		fTaskLooper->Lock();
 		fTaskLooper->Quit();
 	}
-	if(fTaskTimer)
+/*	if(fTaskTimer)
 	{
 		fTaskTimer->Lock();
 		fTaskTimer->Quit();
-	}
+	}*/
 	_Clean();
 }
 
@@ -244,7 +235,7 @@ DepotsView::AllAttached()
 	fRemoveButton->SetEnabled(false);
 	fEnableButton->SetEnabled(false);
 	fDisableButton->SetEnabled(false);
-	_UpdateStatusView();
+	_UpdateStatusView(0);
 	_InitList();
 }
 
@@ -253,8 +244,8 @@ void
 DepotsView::AttachedToWindow()
 {
 	fTaskLooper = new TaskLooper(Window());
-	fTaskTimer = new TaskTimer(10);
-	fTaskTimer->Init();
+//	fTaskTimer = new TaskTimer(10);
+//	fTaskTimer->Init();
 }
 
 
@@ -316,34 +307,68 @@ DepotsView::MessageReceived(BMessage* msg)
 			if(paramsOK)
 			{
 				_AddSelectedRowsToQueue();
-				_StartNextTask();
+		//		_StartNextTask();
 				_UpdateButtons();
 			}
 			break;
 		}
 		case DISABLE_BUTTON_PRESSED: {
 			_AddSelectedRowsToQueue();
-			_StartNextTask();
+		//	_StartNextTask();
 			_UpdateButtons();
+			break;
+		}
+		case TASK_STARTED: {
+			int16 count;
+			status_t result1 = msg->FindInt16(key_count, &count);
+			RepoRow *rowItem;
+			status_t result2 = msg->FindPointer(key_rowptr, (void**)&rowItem);
+			if(result1 == B_OK && result2 == B_OK)
+			{
+				_TaskStarted(rowItem, count);
+			}
 			break;
 		}
 		case TASK_COMPLETE_WITH_ERRORS: {
 			BString repoName = msg->GetString(key_name, kNewRepoDefaultName.String());
-			_CompleteRunningTask(false, repoName);
+			int16 count;
+			status_t result1 = msg->FindInt16(key_count, &count);
+			RepoRow *rowItem;
+			status_t result2 = msg->FindPointer(key_rowptr, (void**)&rowItem);
+			if(result1 == B_OK && result2 == B_OK)
+			{
+				_TaskCompleted(rowItem, count, false, repoName);
+			}
 			BString errorDetails;
 			status_t result = msg->FindString(key_details, &errorDetails);
 			if(result == B_OK)
 			{// TODO seperate details view?
 				(new BAlert("error", errorDetails, kOKLabel, NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
 			}
-			_StartNextTask();
+	//		_StartNextTask();
 			_UpdateButtons();
 			break;
 		}
 		case TASK_COMPLETE: {
 			BString repoName = msg->GetString(key_name, kNewRepoDefaultName.String());
-			_CompleteRunningTask(true, repoName);
-			_StartNextTask();
+			int16 count;
+			status_t result1 = msg->FindInt16(key_count, &count);
+			RepoRow *rowItem;
+			status_t result2 = msg->FindPointer(key_rowptr, (void**)&rowItem);
+			if(result1 == B_OK && result2 == B_OK)
+			{
+				_TaskCompleted(rowItem, count, true, repoName);
+		//		(new BAlert("complete", "Task complete.", "OK"))->Go(NULL);
+			}
+		/*	else
+			{
+				BString res("Results:");
+				res<<result1;
+				res.Append("\n");
+				res<<result2;
+				(new BAlert("results", res, "OK"))->Go(NULL);
+			}*/
+	//		_StartNextTask();
 			_UpdateButtons();
 			break;
 		}
@@ -356,10 +381,10 @@ DepotsView::MessageReceived(BMessage* msg)
 			_UpdateButtons();
 			break;
 		}
-		case UPDATE_STATUS: {
+/*		case UPDATE_STATUS: {
 			_UpdateStatusView();
 			break;
-		}
+		}*/
 		default:
 			BView::MessageReceived(msg);
 	}
@@ -372,25 +397,39 @@ DepotsView::_AddSelectedRowsToQueue()
 	RepoRow* rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
 	while(rowItem)
 	{
-		fTaskQueue.AddItem(rowItem);
+		/*fTaskQueue.AddItem(rowItem);
 		// Only present a status count if there is more than one item in queue
 		if(fTaskQueue.CountItems() > 1)
 		{
 			_UpdateStatusView();
 			fShowCompletedStatus = true;
-		}
+		}*/
 		rowItem->SetTaskState(STATE_IN_QUEUE_WAITING);
-		
+		BMessage taskMsg(DO_TASK);
+		taskMsg.AddPointer(key_rowptr, rowItem);
+		fTaskLooper->PostMessage(&taskMsg);
 		rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection(rowItem));
 	}
 }
 
 
 void
+DepotsView::_TaskStarted(RepoRow *rowItem, int16 count)
+{
+	rowItem->SetTaskState(STATE_IN_QUEUE_RUNNING);
+	// Only present a status count if there is more than one item in queue
+	if(count > 1)
+	{
+		_UpdateStatusView(count);
+		fShowCompletedStatus = true;
+	}
+	fIsTaskRunning = true;
+}
+void
 DepotsView::_StartNextTask()
 {
 	// If tasks are not already running, kick them off
-	if(!fIsTaskRunning)
+/*	if(!fIsTaskRunning)
 	{
 		if(fTaskQueue.IsEmpty())
 			return;
@@ -404,14 +443,39 @@ DepotsView::_StartNextTask()
 		fIsTaskRunning = true;
 		fTaskLooper->PostMessage(DO_TASK);
 		fTaskTimer->Start(rowItem->Name());
-	}
+	}*/
 }
 
 
 void
+DepotsView::_TaskCompleted(RepoRow *rowItem, int16 count, bool noErrors, BString& newName)
+{
+	// If this is the last task show completed status text for 3 seconds
+	if(count==0 && fShowCompletedStatus)
+	{
+		fListStatusView->SetText(kStatusCompletedText);
+		BMessageRunner *mRunner = new BMessageRunner(this, new BMessage(UPDATE_STATUS), 3000000, 1);
+		fShowCompletedStatus = false;
+	}
+	else
+		_UpdateStatusView(count);
+	
+	// Update row values
+	rowItem->SetTaskState(STATE_NOT_IN_QUEUE);
+	if(noErrors)
+		rowItem->SetEnabled(!rowItem->IsEnabled());
+	else
+		rowItem->RefreshEnabledField();
+	// Update a new repository name
+	if(kNewRepoDefaultName.Compare(rowItem->Name()) == 0 && newName.Compare("") != 0)
+		rowItem->SetName(newName.String());
+	if(count==0)
+		fIsTaskRunning = false;
+}
+void
 DepotsView::_CompleteRunningTask(bool noErrors, BString& name)
 {
-	if(fIsTaskRunning)
+/*	if(fIsTaskRunning)
 	{
 		if(fTaskQueue.IsEmpty())
 			return;
@@ -437,7 +501,7 @@ DepotsView::_CompleteRunningTask(bool noErrors, BString& name)
 		if(kNewRepoDefaultName.Compare(rowItem->Name()) == 0 && name.Compare("") != 0)
 			rowItem->SetName(name.String());
 		fIsTaskRunning = false;
-	}
+	}*/
 }
 
 
@@ -726,9 +790,8 @@ DepotsView::_UpdateButtons()
 
 
 void
-DepotsView::_UpdateStatusView()
+DepotsView::_UpdateStatusView(int count)
 {
-	int count = fTaskQueue.CountItems();
 	if(count)
 	{
 		BString text(kStatusViewText);
@@ -737,4 +800,5 @@ DepotsView::_UpdateStatusView()
 	}
 	else
 		fListStatusView->SetText("");
+//	fListStatusView->Invalidate();
 }

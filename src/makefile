@@ -4,6 +4,7 @@ TYPE = APP
 SRCS = TaskTimer.cpp \
 	TaskLooper.cpp \
 	AddRepoWindow.cpp \
+	RepoRow.cpp \
 	DepotsView.cpp \
 	DepotsWindow.cpp \
 	DepotsSettings.cpp \

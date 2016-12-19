@@ -137,8 +137,10 @@ DepotsWindow::MessageReceived(BMessage* msg)
 			break;
 		}
 //		case UPDATE_LIST:
+		case TASK_STARTED:
 		case TASK_COMPLETE_WITH_ERRORS:
-		case TASK_COMPLETE: {
+		case TASK_COMPLETE:
+		case TASK_CANCELED: {
 			fView->MessageReceived(msg);
 			break;
 		}
@@ -148,7 +150,7 @@ DepotsWindow::MessageReceived(BMessage* msg)
 		}
 		case B_NODE_MONITOR: { // captures pkgman changes while Depots application is running
 			// This app is making changes, so ignore this message
-			if(fView->IsTaskRunning())
+			if(fView->IsTaskRunning()) // TODO how to handle this now?
 				break;
 			
 			int32 opcode;

@@ -13,9 +13,10 @@
 #include <View.h>
 
 #include "DepotsSettings.h"
+#include "RepoRow.h"
 #include "TaskLooper.h"
 #include "TaskTimer.h"
-
+/*
 enum {
 	kEnabledColumn,
 	kNameColumn,
@@ -40,7 +41,7 @@ private:
 			BString				fUrl;
 			bool				fEnabled;
 			uint32				fTaskState;
-};
+};*/
 
 
 class DepotsView : public BView {
@@ -58,14 +59,16 @@ private:
 	BColumnListView			*fListView;
 	BStringView				*fListStatusView;
 	TaskLooper				*fTaskLooper;
-	BObjectList<RepoRow>	fTaskQueue;
-	TaskTimer				*fTaskTimer;
+//	BObjectList<RepoRow>	fTaskQueue;
+//	TaskTimer				*fTaskTimer;
 	bool					fIsTaskRunning, fShowCompletedStatus;
 	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
 	
 	// Message helpers
 	void					_AddSelectedRowsToQueue();
+	void					_TaskStarted(RepoRow *rowItem, int16 count);
 	void					_StartNextTask();
+	void					_TaskCompleted(RepoRow *rowItem, int16 count, bool noErrors, BString& newName);
 	void					_CompleteRunningTask(bool noErrors, BString& name);
 	
 	// GUI functions
@@ -76,7 +79,7 @@ private:
 	void					_SaveList();
 	RepoRow*				_AddRepo(BString name, BString url, bool enabled);
 	void					_UpdateButtons();
-	void					_UpdateStatusView();
+	void					_UpdateStatusView(int count);
 };
 
 #endif

@@ -86,10 +86,10 @@ JobStateListener::GetJobLog()
 
 TaskLooper::TaskLooper(BLooper *target)
 	:BLooper(),
-	fWhat(NO_TASKS),
-	fMsgTarget(target),
-	fQuitWasRequested(false),
-	fOutfileInit(B_ERROR)
+//	fWhat(NO_TASKS),
+	fReplyTarget(target)
+//	fQuitWasRequested(false),
+//	fOutfileInit(B_ERROR)
 {
 	// Temp file location
 /*	status_t status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanTaskOut);
@@ -106,7 +106,7 @@ TaskLooper::TaskLooper(BLooper *target)
 bool
 TaskLooper::QuitRequested()
 {	
-	fQuitWasRequested = true;
+//	fQuitWasRequested = true;
 	return MessageQueue()->IsEmpty();
 }
 
@@ -117,38 +117,99 @@ TaskLooper::MessageReceived(BMessage *msg)
 	switch(msg->what)
 	{
 		case DO_TASK: {
-			_DoTask();
+			RepoRow *rowItem;
+			status_t result = msg->FindPointer(key_rowptr, (void**)&rowItem);
+			if(result==B_OK)
+			{
+				// Initialize task
+				Task *newTask = new Task();
+				newTask->rowItem = rowItem;
+				if(rowItem->IsEnabled())
+				{
+					newTask->taskType = DISABLE_DEPOT;
+					newTask->taskParam = rowItem->Name();
+				}
+				else
+				{
+					newTask->taskType = ENABLE_DEPOT;
+					newTask->taskParam = rowItem->Url();
+				}
+				newTask->owner = this;
+			//	(new BAlert("task", newTask->taskParam, "OK"))->Go(NULL);
+				
+				// Add to queue and start
+				fTaskQueue.AddItem(newTask);
+				BString threadName(newTask->taskType==ENABLE_DEPOT ? "enable_task" : "disable_task");
+				newTask->threadId = spawn_thread(_DoTask, threadName.String(), B_NORMAL_PRIORITY, (void*)newTask);
+				if(newTask->threadId < B_OK)
+				{
+					// TODO?
+				}
+				else
+				{
+					resume_thread(newTask->threadId);
+					// Reply to view
+					BMessage reply(*msg);
+					reply.what = TASK_STARTED;
+					reply.AddInt16(key_count, fTaskQueue.CountItems());
+					fReplyTarget->PostMessage(&reply);
+				}
+				
+			}
+			break;
+		}
+		case TASK_COMPLETE:
+		case TASK_COMPLETE_WITH_ERRORS:
+		case TASK_CANCELED: {
+		//	(new BAlert("complete", "Task complete.", "OK"))->Go(NULL);
+			Task *task;
+			status_t result = msg->FindPointer(key_taskptr, (void**)&task);
+			if(result==B_OK)
+			{
+				BMessage reply(*msg);
+				reply.AddInt16(key_count, fTaskQueue.CountItems()-1);
+				reply.AddPointer(key_rowptr, task->rowItem);
+				if(msg->what == TASK_COMPLETE_WITH_ERRORS)
+					reply.AddString(key_details, task->resultErrorDetails);
+				if(task->taskType == ENABLE_DEPOT)
+					reply.AddString(key_name, task->resultNewName);
+				fReplyTarget->PostMessage(&reply);
+				// Delete task
+				fTaskQueue.RemoveItem(task);
+				delete task;
+			}
 			break;
 		}
 	}
 }
 
-
+/*
 void
 TaskLooper::SetTask(int32 what, BString param)
 {
 	fWhat = what;
 	fParam = param;
-}
+}*/
 
 
-void
-TaskLooper::_DoTask()
+status_t
+TaskLooper::_DoTask(void *data)
 {
 	// Check if quit requested
-	if(fQuitWasRequested)
+/*	if(fQuitWasRequested)
 	{
-		fMsgTarget->PostMessage(TASK_CANCELED);// TODO what happens?
+		fReplyTarget->PostMessage(TASK_CANCELED);// TODO what happens?
 		return;
-	}
+	}*/
 	
+	Task *task = (Task*)data;
 	BString errorDetails, repoName("");
 	status_t returnResult = B_OK;
 	DecisionProvider decisionProvider;
 	JobStateListener listener;
-	switch(fWhat){
+	switch(task->taskType){
 		case DISABLE_DEPOT: {
-			BString nameParam(fParam);
+			BString nameParam(task->taskParam);
 			BPackageKit::BContext context(decisionProvider, listener);
 			BPackageKit::DropRepositoryRequest dropRequest(context, nameParam);
 			status_t result = dropRequest.Process();
@@ -180,7 +241,7 @@ TaskLooper::_DoTask()
 			break;
 		}
 		case ENABLE_DEPOT: {
-			BString urlParam(fParam);
+			BString urlParam(task->taskParam);
 			BPackageKit::BContext context(decisionProvider, listener);
 			// Add repository
 			bool asUserRepository = false; //TODO does this ever change?
@@ -243,26 +304,27 @@ TaskLooper::_DoTask()
 	}*/
 	
 	// Report completion status
+	BMessage reply;
 	if(returnResult == B_OK)
 	{
-		BMessage reply(TASK_COMPLETE);
+		reply.what = TASK_COMPLETE;
 		// Add the repo name if we need to update the list row value
-		if(fWhat == ENABLE_DEPOT)
-			reply.AddString(key_name, repoName);
-		fMsgTarget->PostMessage(&reply);
+		if(task->taskType == ENABLE_DEPOT)
+			task->resultNewName = repoName;
 	}
 	else if(returnResult == B_CANCELED)
 	{
-		fMsgTarget->PostMessage(TASK_CANCELED);
+		reply.what = TASK_CANCELED;
 	}
 	else
 	{
-		BMessage reply(TASK_COMPLETE_WITH_ERRORS);
-		reply.AddString(key_details, errorDetails);
-		if(fWhat == ENABLE_DEPOT)
-			reply.AddString(key_name, repoName);
-		fMsgTarget->PostMessage(&reply);
+		reply.what = TASK_COMPLETE_WITH_ERRORS;
+		task->resultErrorDetails = errorDetails;
+		if(task->taskType == ENABLE_DEPOT)
+			task->resultNewName = repoName;
 	}
+	reply.AddPointer(key_taskptr, task);
+	task->owner->PostMessage(&reply);
 #if DEBUGTASK
 	if(returnResult == B_OK || returnResult == B_CANCELED)
 	{
@@ -271,6 +333,7 @@ TaskLooper::_DoTask()
 		(new BAlert("debug", degubDetails, "OK"))->Go(NULL);
 	}
 #endif //DEBUGTASK
+	return 0;
 }
 
 
