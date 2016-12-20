@@ -16,32 +16,6 @@
 #include "RepoRow.h"
 #include "TaskLooper.h"
 #include "TaskTimer.h"
-/*
-enum {
-	kEnabledColumn,
-	kNameColumn,
-	kUrlColumn
-};
-
-class RepoRow : public BRow {
-public:
-								RepoRow(const char* repo_name,
-									const char* repo_url, bool enabled);
-		
-			const char*			Name() const { return fName.String(); }
-			void				SetName(const char *name);
-			const char*			Url() const { return fUrl.String(); }
-			void				SetEnabled(bool enabled);
-			void				RefreshEnabledField();
-			bool				IsEnabled() { return fEnabled; }
-			void				SetTaskState(uint32 state);
-			uint32				TaskState() { return fTaskState; }
-private:
-			BString				fName;
-			BString				fUrl;
-			bool				fEnabled;
-			uint32				fTaskState;
-};*/
 
 
 class DepotsView : public BView {
@@ -62,6 +36,7 @@ private:
 //	BObjectList<RepoRow>	fTaskQueue;
 //	TaskTimer				*fTaskTimer;
 	bool					fIsTaskRunning, fShowCompletedStatus;
+	int						fRunningTaskCount;
 	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
 	
 	// Message helpers
@@ -79,7 +54,7 @@ private:
 	void					_SaveList();
 	RepoRow*				_AddRepo(BString name, BString url, bool enabled);
 	void					_UpdateButtons();
-	void					_UpdateStatusView(int count);
+	void					_UpdateStatusView();
 };
 
 #endif

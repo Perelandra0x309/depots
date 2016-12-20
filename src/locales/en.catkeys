@@ -1,11 +1,11 @@
-1	English	application/x-vnd.BH-Depots	3321630690
+1	English	application/x-vnd.BH-Depots	4023213781
 The URL must start with a protocol, for example http:// or https://	AddRepoWindow	Add URL error message	The URL must start with a protocol, for example http:// or https://
 Add	AddRepoWindow	Button label	Add
 Depot URL:	AddRepoWindow	Text box label	Depot URL:
 Cancel	Constants	Button label	Cancel
 OK	Constants	Button label	OK
 Unknown	Constants	Unknown depot name	Unknown
-Depots preflet version 1.0.1	DepotsApplication	About box line 1	Depots preflet version 1.0.1
+Depots preflet version 1.1.0	DepotsApplication	About box line 1	Depots preflet version 1.1.0
 Copyright © 2016 by Brian Hill	DepotsApplication	About box line 2	Copyright © 2016 by Brian Hill
 This preflet will enable and disable depots used in the HaikuDepot application.	DepotsApplication	About box line 3	This preflet will enable and disable depots used in the HaikuDepot application.
 Could not retrieve names of currently enabled depots.	DepotsView	Alert error message	Could not retrieve names of currently enabled depots.
@@ -30,3 +30,7 @@ Completed	TaskLooper	Completed task status message	Completed
 Description	TaskLooper	Failed task error description	Description
 Failed	TaskLooper	Failed task status message	Failed
 Details	TaskLooper	Job log details header	Details
+Good news! Task for repository %name% completed.	TaskTimer	Alert message.  Do not translate %name%	Good news! Task for repository %name% completed.
+Task for repository %name% is taking a long time to complete.	TaskTimer	Alert message.  Do not translate %name%	Task for repository %name% is taking a long time to complete.
+Cancel task	TaskTimer	Button label	Cancel task
+Keep trying	TaskTimer	Button label	Keep trying

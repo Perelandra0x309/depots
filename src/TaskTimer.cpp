@@ -2,11 +2,9 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
-//#include <Alert.h>
 #include <Button.h>
 #include <Catalog.h>
 #include <LayoutBuilder.h>
-//#include <View.h>
 
 #include "constants.h"
 #include "TaskTimer.h"
@@ -15,34 +13,42 @@
 #define B_TRANSLATION_CONTEXT "TaskTimer"
 
 
-TaskTimer::TaskTimer(int32 seconds)
+TaskTimer::TaskTimer(BLooper *target)
 	:
-//	BWindow(BRect(100,100,300,200), "TimerWindow", B_MODAL_WINDOW,
-//		B_ASYNCHRONOUS_CONTROLS |  B_AUTO_UPDATE_SIZE_LIMITS),
 	BLooper(),
-	fSeconds(seconds),
-	fIsStopped(true),
+	fReplyTarget(target),
+	fTimeoutMicroSeconds(kTimerTimeoutSeconds*1000000),
+	fTimerIsRunning(false),
 	fMsgRunner(NULL),
 	fTimeoutMessage(TASK_TIMEOUT),
 	fTimeoutAlert(NULL)
 {
-/*	fSkipButton = new BButton(B_TRANSLATE_COMMENT("Skip", "Button label"),
-								new BMessage(TASK_TIMER_SKIP_BUTTON));
-	fCancelAllButton = new BButton(B_TRANSLATE_COMMENT("Cancel All", "Button label"),
-								new BMessage(TASK_TIMER_CANCEL_ALL_BUTTON));
-	BLayoutBuilder::Group<>(this, B_HORIZONTAL)
-		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
-		.Add(fCancelAllButton)
-		.Add(fSkipButton);
-	SetDefaultButton(fSkipButton);*/
 	Run();
+	
+	fTimeoutMicroSeconds = 100000;//TODO remove debug code
+	// Messenger for the Message Runner to use to send its message to the timer
+	fMessenger.SetTo(this);
+	// Invoker for the Alerts to use to send their messages to the timer
+	fTimeoutAlertInvoker.SetMessage(new BMessage(TIMEOUT_ALERT_BUTTON_SELECTION));
+	fTimeoutAlertInvoker.SetTarget(this);
+}
+
+
+TaskTimer::~TaskTimer()
+{
+	if(fTimeoutAlert)
+	{
+		fTimeoutAlert->Lock();
+		fTimeoutAlert->Quit();
+	}
+	if(fMsgRunner)
+		fMsgRunner->SetCount(0);
 }
 
 
 bool
 TaskTimer::QuitRequested()
 {
-//	Hide();
 	return true;
 }
 
@@ -53,22 +59,40 @@ TaskTimer::MessageReceived(BMessage *msg)
 	switch(msg->what)
 	{
 		case TASK_TIMEOUT: {
-		//	Show();
 			fMsgRunner = NULL;
-			fTimeoutAlert = new BAlert("timeout", "Task timed out.", "Keep Trying", "Cancel task", NULL,
-											B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_WARNING_ALERT);
-			fTimeoutAlert->SetShortcut(0, B_ESCAPE);
-			fTimeoutAlert->Go(&fTimeoutAlertInvoker);
+			if(fTimerIsRunning)
+			{
+				BString text(B_TRANSLATE_COMMENT("Task for repository %name% is taking a long time to complete.",
+								"Alert message.  Do not translate %name%"));
+				BString nameString("\"");
+				nameString.Append(fDepotName).Append("\"");
+				text.ReplaceFirst("%name%", nameString);
+				fTimeoutAlert = new BAlert("timeout", text, B_TRANSLATE_COMMENT("Keep trying", "Button label"),
+											B_TRANSLATE_COMMENT("Cancel task", "Button label"), NULL,
+												B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_WARNING_ALERT);
+				fTimeoutAlert->SetShortcut(0, B_ESCAPE);
+				fTimeoutAlert->Go(&fTimeoutAlertInvoker);
+			}
 			break;
 		}
 		case TIMEOUT_ALERT_BUTTON_SELECTION: {
-		//	Hide();
-			(new BAlert("test", "Alert window closed", "OK"))->Go(NULL);
 			fTimeoutAlert = NULL;
-			// Tiemout alert was invoked by user and timer still has not been stopped
-			if(!fIsStopped)
+			// Timeout alert was invoked by user and timer still has not been stopped
+			if(fTimerIsRunning)
 			{
 				// TODO send message to stop task
+				int32 selection;
+				msg->FindInt32("which", &selection);
+					//find which button was pressed
+			//	BString text("Button pressed: ");
+			//	text<<selection;
+			//	(new BAlert("test", text, "OK"))->Go(NULL);
+				if(selection==1)
+				{	
+					BMessage reply(TASK_KILL_REQUEST);
+					reply.AddString(key_name, fDepotName);
+					fReplyTarget->PostMessage(&reply);
+				}
 			}
 			break;
 		}
@@ -77,53 +101,45 @@ TaskTimer::MessageReceived(BMessage *msg)
 
 
 void
-TaskTimer::Init()
-{
-	fMessenger.SetTo(this);
-	fTimeoutAlertInvoker.SetMessage(new BMessage(TIMEOUT_ALERT_BUTTON_SELECTION));
-	fTimeoutAlertInvoker.SetTarget(this);
-}
-
-
-void
 TaskTimer::Start(const char *name)
 {
-	fIsStopped = false;
+	fTimerIsRunning = true;
 	fDepotName.SetTo(name);
-	int32 microSecs = fSeconds*1000000;
-	microSecs = 1000000;//TODO remove debug code
+	
+	// Create a message runner that will send a TASK_TIMEOUT message if the timer is not stopped
 	if(fMsgRunner == NULL)
-	{
-		fMsgRunner = new BMessageRunner(fMessenger, &fTimeoutMessage, microSecs, 1);
-	}
+		fMsgRunner = new BMessageRunner(fMessenger, &fTimeoutMessage, fTimeoutMicroSeconds, 1);
+	else
+		fMsgRunner->SetInterval(fTimeoutMicroSeconds);
 }
 
 
 void
 TaskTimer::Stop(const char *name)
 {
-	fIsStopped = true;
+	fTimerIsRunning = false;
+	
+	// Reset max timeout so we can re-use the runner at the next Start call
 	if(fMsgRunner != NULL)
-	{
-		//TODO set max timeout instead?
-		fMsgRunner->SetCount(0);
-		delete fMsgRunner;
-		fMsgRunner = NULL;
-	}
-	//TODO if alert is showing...
+		fMsgRunner->SetInterval(LLONG_MAX);
+		
+	// If timeout alert is showing replace it
 	if(fTimeoutAlert)
 	{
-		fTimeoutAlert->Lock();
-		fTimeoutAlert->SetText("Task completed");
-		BButton *button = fTimeoutAlert->ButtonAt(0);
-		if(button)
-			button->Hide();
-		button = fTimeoutAlert->ButtonAt(1);
-		if(button)
-		{
-			button->SetLabel("OK");
-		//	button->SetMessage(NULL);
-		}
-		fTimeoutAlert->Unlock();
+		// Remove current alert
+		BRect frame = fTimeoutAlert->Frame();
+		fTimeoutAlert->Quit();
+		fTimeoutAlert = NULL;
+		
+		// Display new alert that won't send a message
+		BString text(B_TRANSLATE_COMMENT("Good news! Task for repository %name% completed.", "Alert message.  Do not translate %name%"));
+		BString nameString("\"");
+		nameString.Append(name).Append("\"");
+		text.ReplaceFirst("%name%", nameString);
+		BAlert *newAlert = new BAlert("timeout", text, kOKLabel, NULL, NULL,
+											B_WIDTH_AS_USUAL, B_WARNING_ALERT);
+		newAlert->SetShortcut(0, B_ESCAPE);
+		newAlert->MoveTo(frame.left, frame.top);
+		newAlert->Go(NULL);
 	}
 }

@@ -12,6 +12,7 @@
 #define B_TRANSLATION_CONTEXT "Constants"
 
 static const int kAddWindowOffset = 10;
+static const int kTimerTimeoutSeconds = 10;
 
 static const BString kOKLabel = B_TRANSLATE_COMMENT("OK", "Button label");
 static const BString kCancelLabel = B_TRANSLATE_COMMENT("Cancel", "Button label");
@@ -53,7 +54,7 @@ enum {
 	DISABLE_BUTTON_PRESSED,
 	ITEM_INVOKED,
 	DO_TASK,
-	UPDATE_STATUS,
+	UPDATE_STATUS_VIEW,
 	TASK_STARTED,
 	TASK_COMPLETE,
 	TASK_COMPLETE_WITH_ERRORS,
@@ -64,7 +65,8 @@ enum {
 	ENABLE_DEPOT,
 	DISABLE_DEPOT,
 	TASK_TIMEOUT,
-	TIMEOUT_ALERT_BUTTON_SELECTION
+	TIMEOUT_ALERT_BUTTON_SELECTION,
+	TASK_KILL_REQUEST
 };
 
 // Repo row task state

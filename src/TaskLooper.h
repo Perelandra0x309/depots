@@ -18,6 +18,7 @@
 
 class TaskLooper;
 
+
 typedef struct {
 		RepoRow *rowItem;
 		int32 taskType;
@@ -26,6 +27,7 @@ typedef struct {
 		TaskLooper *owner;
 		BString resultNewName, resultErrorDetails;
 } Task;
+
 
 class DecisionProvider : public BPackageKit::BDecisionProvider {
 public:
@@ -65,8 +67,8 @@ private:
 //	int32					fWhat, fOutfileInit;
 //	bool					fQuitWasRequested;
 	BObjectList<Task>		fTaskQueue;
-	static status_t				_DoTask(void *data);
-	static void					_AppendErrorDetails(BString &details, JobStateListener *listener);
+	static status_t			_DoTask(void *data);
+	static void				_AppendErrorDetails(BString &details, JobStateListener *listener);
 //	void					_AddErrorDetails(BString &details);
 	BLooper					*fReplyTarget;
 };

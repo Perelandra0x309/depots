@@ -17,17 +17,17 @@
 
 class TaskTimer : public BLooper {
 public:
-							TaskTimer(int32 seconds);
+							TaskTimer(BLooper *target);
+							~TaskTimer();
 	virtual bool			QuitRequested();
 	virtual void			MessageReceived(BMessage*);
-	void					Init();
 	void					Start(const char *name);
 	void					Stop(const char *name);
 private:
-	int32					fSeconds;
-	bool					fIsStopped;
+	int32					fTimeoutMicroSeconds;
+	bool					fTimerIsRunning;
 	BString					fDepotName;
-//	BButton					*fSkipButton, *fCancelAllButton;
+	BLooper					*fReplyTarget;
 	BMessenger				fMessenger;
 	BMessageRunner			*fMsgRunner;
 	BMessage				fTimeoutMessage;
