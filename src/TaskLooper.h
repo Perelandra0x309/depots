@@ -8,25 +8,11 @@
 #include <Job.h>
 #include <Looper.h>
 #include <ObjectList.h>
-#include <Path.h>
 #include <String.h>
 #include <StringList.h>
 #include <package/Context.h>
 
-#include "RepoRow.h"
-
-
-class TaskLooper;
-
-
-typedef struct {
-		RepoRow *rowItem;
-		int32 taskType;
-		BString taskParam;
-		thread_id threadId;
-		TaskLooper *owner;
-		BString resultNewName, resultErrorDetails;
-} Task;
+#include "TaskTimer.h"
 
 
 class DecisionProvider : public BPackageKit::BDecisionProvider {
@@ -60,16 +46,12 @@ public:
 							TaskLooper(BLooper *target);
 	virtual	bool			QuitRequested();
 	virtual void			MessageReceived(BMessage*);
-//	void					SetTask(int32 what, BString param);
+	
 private:
-//	BPath					fPkgmanTaskOut;
-//	BString					fParam;
-//	int32					fWhat, fOutfileInit;
-//	bool					fQuitWasRequested;
 	BObjectList<Task>		fTaskQueue;
+	void					_RemoveAndDelete(Task *task);
 	static status_t			_DoTask(void *data);
 	static void				_AppendErrorDetails(BString &details, JobStateListener *listener);
-//	void					_AddErrorDetails(BString &details);
 	BLooper					*fReplyTarget;
 };
 

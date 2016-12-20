@@ -6,8 +6,6 @@
 #define TASKTIMER_H
 
 #include <Alert.h>
-//#include <Button.h>
-//#include <Handler.h>
 #include <Invoker.h>
 #include <Looper.h>
 #include <Message.h>
@@ -15,9 +13,26 @@
 #include <Messenger.h>
 #include <String.h>
 
+#include "RepoRow.h"
+
+class TaskTimer;
+class TaskLooper;
+
+
+typedef struct {
+		RepoRow *rowItem;
+		int32 taskType;
+		BString name, taskParam;
+		thread_id threadId;
+		TaskLooper *owner;
+		BString resultName, resultErrorDetails;
+		TaskTimer *fTimer;
+} Task;
+
+
 class TaskTimer : public BLooper {
 public:
-							TaskTimer(BLooper *target);
+							TaskTimer(BLooper *target, Task *owner);
 							~TaskTimer();
 	virtual bool			QuitRequested();
 	virtual void			MessageReceived(BMessage*);
@@ -33,6 +48,7 @@ private:
 	BMessage				fTimeoutMessage;
 	BAlert					*fTimeoutAlert;
 	BInvoker				fTimeoutAlertInvoker;
+	Task					*fOwner;
 };
 
 #endif

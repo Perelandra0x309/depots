@@ -2,12 +2,8 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
-#include <Alert.h>
 #include <Catalog.h>
-#include <File.h>
-#include <FindDirectory.h>
 #include <MessageQueue.h>
-//#include <stdlib.h>
 #include <package/AddRepositoryRequest.h>
 #include <package/DropRepositoryRequest.h>
 #include <package/RefreshRepositoryRequest.h>
@@ -85,20 +81,9 @@ JobStateListener::GetJobLog()
 
 
 TaskLooper::TaskLooper(BLooper *target)
-	:BLooper(),
-//	fWhat(NO_TASKS),
+	:BLooper("TaskLooper"),
 	fReplyTarget(target)
-//	fQuitWasRequested(false),
-//	fOutfileInit(B_ERROR)
 {
-	// Temp file location
-/*	status_t status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanTaskOut);
-	if (status != B_OK)
-		status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanTaskOut); // alternate location
-	if (status == B_OK) {
-		fPkgmanTaskOut.Append("pkgman_out");
-		fOutfileInit = B_OK;
-	}*/
 	Run();
 }
 
@@ -106,7 +91,6 @@ TaskLooper::TaskLooper(BLooper *target)
 bool
 TaskLooper::QuitRequested()
 {	
-//	fQuitWasRequested = true;
 	return MessageQueue()->IsEmpty();
 }
 
@@ -124,10 +108,12 @@ TaskLooper::MessageReceived(BMessage *msg)
 				// Initialize task
 				Task *newTask = new Task();
 				newTask->rowItem = rowItem;
+				newTask->name = rowItem->Name();
+				newTask->resultName = newTask->name;
 				if(rowItem->IsEnabled())
 				{
 					newTask->taskType = DISABLE_DEPOT;
-					newTask->taskParam = rowItem->Name();
+					newTask->taskParam = newTask->name;
 				}
 				else
 				{
@@ -135,26 +121,39 @@ TaskLooper::MessageReceived(BMessage *msg)
 					newTask->taskParam = rowItem->Url();
 				}
 				newTask->owner = this;
-			//	(new BAlert("task", newTask->taskParam, "OK"))->Go(NULL);
+				newTask->fTimer = NULL;
 				
 				// Add to queue and start
 				fTaskQueue.AddItem(newTask);
 				BString threadName(newTask->taskType==ENABLE_DEPOT ? "enable_task" : "disable_task");
 				newTask->threadId = spawn_thread(_DoTask, threadName.String(), B_NORMAL_PRIORITY, (void*)newTask);
+				status_t threadResult;
 				if(newTask->threadId < B_OK)
 				{
-					// TODO?
+					threadResult = B_ERROR;
 				}
 				else
 				{
-					resume_thread(newTask->threadId);
-					// Reply to view
-					BMessage reply(*msg);
-					reply.what = TASK_STARTED;
-					reply.AddInt16(key_count, fTaskQueue.CountItems());
-					fReplyTarget->PostMessage(&reply);
+					threadResult = resume_thread(newTask->threadId);
+					if(threadResult == B_OK)
+					{
+						newTask->fTimer = new TaskTimer(this, newTask);
+						newTask->fTimer->Start(newTask->name);
+						// Reply to view
+						BMessage reply(*msg);
+						reply.what = TASK_STARTED;
+						reply.AddInt16(key_count, fTaskQueue.CountItems());
+						fReplyTarget->PostMessage(&reply);
+					}
+					else
+					{
+						kill_thread(newTask->threadId);
+					}
 				}
-				
+				if(threadResult != B_OK)
+				{
+					_RemoveAndDelete(newTask);
+				}
 			}
 			break;
 		}
@@ -164,43 +163,58 @@ TaskLooper::MessageReceived(BMessage *msg)
 		//	(new BAlert("complete", "Task complete.", "OK"))->Go(NULL);
 			Task *task;
 			status_t result = msg->FindPointer(key_taskptr, (void**)&task);
-			if(result==B_OK)
+			if(result==B_OK && fTaskQueue.HasItem(task))
 			{
-				BMessage reply(*msg);
+				task->fTimer->Stop(task->resultName);
+				BMessage reply(msg->what);
 				reply.AddInt16(key_count, fTaskQueue.CountItems()-1);
 				reply.AddPointer(key_rowptr, task->rowItem);
 				if(msg->what == TASK_COMPLETE_WITH_ERRORS)
 					reply.AddString(key_details, task->resultErrorDetails);
-				if(task->taskType == ENABLE_DEPOT)
-					reply.AddString(key_name, task->resultNewName);
+				if(task->taskType == ENABLE_DEPOT && task->name.Compare(task->resultName) != 0)
+					reply.AddString(key_name, task->resultName);
 				fReplyTarget->PostMessage(&reply);
-				// Delete task
-				fTaskQueue.RemoveItem(task);
-				delete task;
+				_RemoveAndDelete(task);
+			}
+			break;
+		}
+		case TASK_KILL_REQUEST: {
+			Task *task;
+			status_t result = msg->FindPointer(key_taskptr, (void**)&task);
+			if(result==B_OK && fTaskQueue.HasItem(task))
+			{
+				status_t killResult = kill_thread(task->threadId);
+				BMessage reply(TASK_CANCELED);
+				reply.AddInt16(key_count, fTaskQueue.CountItems()-1);
+				reply.AddPointer(key_rowptr, task->rowItem);
+				fReplyTarget->PostMessage(&reply);
+				_RemoveAndDelete(task);
 			}
 			break;
 		}
 	}
 }
 
-/*
+
 void
-TaskLooper::SetTask(int32 what, BString param)
+TaskLooper::_RemoveAndDelete(Task *task)
 {
-	fWhat = what;
-	fParam = param;
-}*/
+	fTaskQueue.RemoveItem(task);
+	if(task->fTimer)
+	{
+		task->fTimer->Lock();
+		task->fTimer->Quit();
+		task->fTimer = NULL;
+	}
+	delete task;
+}
 
 
 status_t
 TaskLooper::_DoTask(void *data)
 {
-	// Check if quit requested
-/*	if(fQuitWasRequested)
-	{
-		fReplyTarget->PostMessage(TASK_CANCELED);// TODO what happens?
-		return;
-	}*/
+	// TODO debug
+//	sleep(60);
 	
 	Task *task = (Task*)data;
 	BString errorDetails, repoName("");
@@ -221,23 +235,6 @@ TaskLooper::_DoTask(void *data)
 					
 				}
 			}
-			
-			// Create command
-	/*		BString command("yes | pkgman drop \"");
-			command.Append(nameParam).Append("\"");
-			if(fOutfileInit == B_OK)
-			{
-				command.Append(" > ").Append(fPkgmanTaskOut.Path());
-				command.Append(" 2> ").Append(fPkgmanTaskOut.Path()).Append("2");
-			}
-			int sysResult = system(command.String());
-			if(sysResult)
-			{
-				returnResult = sysResult;
-				errorDetails.Append("There was an error disabling the depot ").Append(nameParam).Append("\n");
-				if(fOutfileInit == B_OK)
-					_AddErrorDetails(errorDetails);
-			}*/
 			break;
 		}
 		case ENABLE_DEPOT: {
@@ -269,40 +266,9 @@ TaskLooper::_DoTask(void *data)
 					_AppendErrorDetails(errorDetails, &listener);
 				}
 			}
-			
-			// Create command
-	/*		BString command("yes | pkgman add \"");
-			command.Append(urlParam).Append("\"");
-			if(fOutfileInit == B_OK)
-			{
-				command.Append(" > ").Append(fPkgmanTaskOut.Path());
-				command.Append(" 2> ").Append(fPkgmanTaskOut.Path()).Append("2");
-			}
-			int sysResult = system(command.String());
-			if(sysResult)
-			{
-				returnResult = sysResult;
-				errorDetails.Append("There was an error enabling the depot ").Append(urlParam).Append("\n");
-				if(fOutfileInit == B_OK)
-					_AddErrorDetails(errorDetails);
-			}*/
 			break;
 		}
 	}
-	// Delete temp files
-/*	if(fOutfileInit == B_OK)
-	{
-		BEntry tmpEntry(fPkgmanTaskOut.Path());
-		if(tmpEntry.Exists())
-			tmpEntry.Remove();
-		BString out2Path(fPkgmanTaskOut.Path());
-		out2Path.Append("2");
-		tmpEntry.SetTo(out2Path);
-		if(tmpEntry.Exists())
-			tmpEntry.Remove();
-		tmpEntry.Unset();
-	}*/
-	
 	// Report completion status
 	BMessage reply;
 	if(returnResult == B_OK)
@@ -310,7 +276,7 @@ TaskLooper::_DoTask(void *data)
 		reply.what = TASK_COMPLETE;
 		// Add the repo name if we need to update the list row value
 		if(task->taskType == ENABLE_DEPOT)
-			task->resultNewName = repoName;
+			task->resultName = repoName;
 	}
 	else if(returnResult == B_CANCELED)
 	{
@@ -321,7 +287,7 @@ TaskLooper::_DoTask(void *data)
 		reply.what = TASK_COMPLETE_WITH_ERRORS;
 		task->resultErrorDetails = errorDetails;
 		if(task->taskType == ENABLE_DEPOT)
-			task->resultNewName = repoName;
+			task->resultName = repoName;
 	}
 	reply.AddPointer(key_taskptr, task);
 	task->owner->PostMessage(&reply);
@@ -343,31 +309,3 @@ TaskLooper::_AppendErrorDetails(BString &details, JobStateListener *listener)
 	details.Append("\n\n").Append(kDetailsText).Append(":\n");
 	details.Append(listener->GetJobLog());
 }
-/*
-void
-TaskLooper::_AddErrorDetails(BString &details)
-{
-	details.Append("Details:\n\n");
-	BFile outFile(fPkgmanTaskOut.Path(), B_READ_ONLY);
-	if(outFile.InitCheck() == B_OK)
-	{
-		off_t size;
-		outFile.GetSize(&size);
-		char buffer[size];
-		size_t bytes = outFile.Read(buffer, size);
-		details.Append(buffer, bytes).Append("\n");
-	}
-	outFile.Unset();
-	BString errorPath(fPkgmanTaskOut.Path());
-	errorPath.Append("2");
-	outFile.SetTo(errorPath.String(), B_READ_ONLY);
-	if(outFile.InitCheck() == B_OK)
-	{
-		off_t size;
-		outFile.GetSize(&size);
-		char buffer[size];
-		size_t bytes = outFile.Read(buffer, size);
-		details.Append(buffer, bytes);
-	}
-	outFile.Unset();
-}*/

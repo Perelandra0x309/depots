@@ -33,8 +33,6 @@ private:
 	BColumnListView			*fListView;
 	BStringView				*fListStatusView;
 	TaskLooper				*fTaskLooper;
-//	BObjectList<RepoRow>	fTaskQueue;
-//	TaskTimer				*fTaskTimer;
 	bool					fIsTaskRunning, fShowCompletedStatus;
 	int						fRunningTaskCount;
 	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
@@ -42,9 +40,8 @@ private:
 	// Message helpers
 	void					_AddSelectedRowsToQueue();
 	void					_TaskStarted(RepoRow *rowItem, int16 count);
-	void					_StartNextTask();
 	void					_TaskCompleted(RepoRow *rowItem, int16 count, bool noErrors, BString& newName);
-	void					_CompleteRunningTask(bool noErrors, BString& name);
+	void					_TaskCanceled(RepoRow *rowItem, int16 count);
 	
 	// GUI functions
 	BString					_GetRootUrl(BString url);

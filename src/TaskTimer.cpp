@@ -2,9 +2,7 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
-#include <Button.h>
 #include <Catalog.h>
-#include <LayoutBuilder.h>
 
 #include "constants.h"
 #include "TaskTimer.h"
@@ -13,7 +11,7 @@
 #define B_TRANSLATION_CONTEXT "TaskTimer"
 
 
-TaskTimer::TaskTimer(BLooper *target)
+TaskTimer::TaskTimer(BLooper *target, Task *owner)
 	:
 	BLooper(),
 	fReplyTarget(target),
@@ -21,11 +19,12 @@ TaskTimer::TaskTimer(BLooper *target)
 	fTimerIsRunning(false),
 	fMsgRunner(NULL),
 	fTimeoutMessage(TASK_TIMEOUT),
-	fTimeoutAlert(NULL)
+	fTimeoutAlert(NULL),
+	fOwner(owner)
 {
 	Run();
 	
-	fTimeoutMicroSeconds = 100000;//TODO remove debug code
+//	fTimeoutMicroSeconds = 1000000;//TODO remove debug code
 	// Messenger for the Message Runner to use to send its message to the timer
 	fMessenger.SetTo(this);
 	// Invoker for the Alerts to use to send their messages to the timer
@@ -80,18 +79,23 @@ TaskTimer::MessageReceived(BMessage *msg)
 			// Timeout alert was invoked by user and timer still has not been stopped
 			if(fTimerIsRunning)
 			{
-				// TODO send message to stop task
-				int32 selection;
+				//find which button was pressed
+				int32 selection=-1;
 				msg->FindInt32("which", &selection);
-					//find which button was pressed
 			//	BString text("Button pressed: ");
 			//	text<<selection;
 			//	(new BAlert("test", text, "OK"))->Go(NULL);
 				if(selection==1)
 				{	
 					BMessage reply(TASK_KILL_REQUEST);
-					reply.AddString(key_name, fDepotName);
+					reply.AddPointer(key_taskptr, fOwner);
 					fReplyTarget->PostMessage(&reply);
+				}
+				else if(selection == 0)
+				{
+					fTimerIsRunning = true;
+					// Create new timer for 30 seconds
+					fMsgRunner = new BMessageRunner(fMessenger, &fTimeoutMessage, 30000000, 1);
 				}
 			}
 			break;
