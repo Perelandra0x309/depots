@@ -262,8 +262,7 @@ DepotsView::MessageReceived(BMessage* msg)
 			if(result1 == B_OK && result2 == B_OK)
 				_TaskCompleted(rowItem, count, msg->what==TASK_COMPLETE, repoName);
 			// If a repo was enabled, it is possible a repo on the same server was disabled- need to refresh all
-			if(rowItem->IsEnabled())
-				_UpdatePkgmanList(true);
+			_UpdatePkgmanList(true);
 			_UpdateButtons();
 			break;
 		}

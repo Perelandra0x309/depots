@@ -61,7 +61,7 @@ TaskTimer::MessageReceived(BMessage *msg)
 			fMsgRunner = NULL;
 			if(fTimerIsRunning)
 			{
-				BString text(B_TRANSLATE_COMMENT("Task for repository %name% is taking a long time to complete.",
+				BString text(B_TRANSLATE_COMMENT("Task for depot %name% is taking a long time to complete.",
 								"Alert message.  Do not translate %name%"));
 				BString nameString("\"");
 				nameString.Append(fDepotName).Append("\"");
@@ -82,9 +82,6 @@ TaskTimer::MessageReceived(BMessage *msg)
 				//find which button was pressed
 				int32 selection=-1;
 				msg->FindInt32("which", &selection);
-			//	BString text("Button pressed: ");
-			//	text<<selection;
-			//	(new BAlert("test", text, "OK"))->Go(NULL);
 				if(selection==1)
 				{	
 					BMessage reply(TASK_KILL_REQUEST);
@@ -93,7 +90,6 @@ TaskTimer::MessageReceived(BMessage *msg)
 				}
 				else if(selection == 0)
 				{
-					fTimerIsRunning = true;
 					// Create new timer for 30 seconds
 					fMsgRunner = new BMessageRunner(fMessenger, &fTimeoutMessage, 30000000, 1);
 				}
@@ -136,7 +132,8 @@ TaskTimer::Stop(const char *name)
 		fTimeoutAlert = NULL;
 		
 		// Display new alert that won't send a message
-		BString text(B_TRANSLATE_COMMENT("Good news! Task for repository %name% completed.", "Alert message.  Do not translate %name%"));
+		BString text(B_TRANSLATE_COMMENT("Good news! Task for repository %name% completed.",
+						"Alert message.  Do not translate %name%"));
 		BString nameString("\"");
 		nameString.Append(name).Append("\"");
 		text.ReplaceFirst("%name%", nameString);

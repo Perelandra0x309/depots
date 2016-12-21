@@ -15,7 +15,6 @@
 #include "constants.h"
 #include "DepotsWindow.h"
 
-#include <stdio.h>
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "DepotsWindow"
@@ -83,7 +82,6 @@ DepotsWindow::_StartWatching()
 	{
 		status_t result = watch_node(&fPackageNodeRef, B_WATCH_DIRECTORY, this);
 		fWatchingPackageNode = (result==B_OK);
-//		printf("Watching node was %ssuccessful. Result = %i\n", fWatchingPackageNode ? "": "not ", result);
 	}
 }
 
@@ -94,7 +92,6 @@ DepotsWindow::_StopWatching()
 	if(fPackageNodeStatus == B_OK && fWatchingPackageNode)// package-repositories directory is being watched
 	{	
 		watch_node(&fPackageNodeRef, B_STOP_WATCHING, this);
-//		printf("Stopped watching node\n");
 		fWatchingPackageNode = false;
 	}
 }
@@ -106,8 +103,7 @@ DepotsWindow::QuitRequested()
 	if(fView->IsTaskRunning())
 	{
 		int32 result = (new BAlert("tasks", B_TRANSLATE_COMMENT("Tasks are still running. Stop tasks "
-										"and quit?", "Alert message"),
-										"No", "Yes", NULL,
+										"and quit?", "Alert message"), "No", "Yes", NULL,
 										B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
 		if(result == 0)
 			return false;
@@ -136,7 +132,6 @@ DepotsWindow::MessageReceived(BMessage* msg)
 				fView->AddManualRepository(url);
 			break;
 		}
-//		case UPDATE_LIST:
 		case TASK_STARTED:
 		case TASK_COMPLETE_WITH_ERRORS:
 		case TASK_COMPLETE:

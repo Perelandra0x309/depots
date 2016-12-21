@@ -239,7 +239,11 @@ TaskLooper::_DoTask(void *data)
 			if (result != B_OK) {
 				returnResult = result;
 				if (result != B_CANCELED) {
-					errorDetails.Append("There was an error disabling the depot ").Append(nameParam);
+					errorDetails.Append(B_TRANSLATE_COMMENT("There was an error disabling the depot %name%",
+											"Error message, do not translate %name%"));
+					BString nameString("\"");
+					nameString.Append(nameParam).Append("\"");
+					errorDetails.ReplaceFirst("%name%", nameString);
 					_AppendErrorDetails(errorDetails, &listener);
 					
 				}
@@ -256,7 +260,9 @@ TaskLooper::_DoTask(void *data)
 			if (result != B_OK) {
 				returnResult = result;
 				if (result != B_CANCELED) {
-					errorDetails.Append("There was an error enabling the depot ").Append(urlParam);
+					errorDetails.Append(B_TRANSLATE_COMMENT("There was an error enabling the depot %url%",
+											"Error message, do not translate %url%"));
+					errorDetails.ReplaceFirst("%url%", urlParam);
 					_AppendErrorDetails(errorDetails, &listener);
 				}
 				break;
@@ -271,7 +277,11 @@ TaskLooper::_DoTask(void *data)
 			if (result != B_OK) {
 				returnResult = result;
 				if (result != B_CANCELED) {
-					errorDetails.Append("There was an error refreshing the depot cache for ").Append(repoName);
+					errorDetails.Append(B_TRANSLATE_COMMENT("There was an error refreshing the depot cache for %name%",
+											"Error message, do not translate %name%"));
+					BString nameString("\"");
+					nameString.Append(repoName).Append("\"");
+					errorDetails.ReplaceFirst("%name%", nameString);
 					_AppendErrorDetails(errorDetails, &listener);
 				}
 			}
