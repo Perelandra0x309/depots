@@ -6,16 +6,9 @@
 #include <Button.h>
 #include <Catalog.h>
 #include <ColumnTypes.h>
-#include <File.h>
-#include <FindDirectory.h>
-#include <Layout.h>
 #include <LayoutBuilder.h>
 #include <MessageRunner.h>
 #include <SeparatorView.h>
-#include <StringList.h>
-#include <StringView.h>
-//#include <stdlib.h>
-//#include <stdio.h>
 #include <package/PackageRoster.h>
 #include <package/RepositoryConfig.h>
 
@@ -43,18 +36,9 @@ DepotsView::DepotsView()
 	:
 	BView("depotsview", B_SUPPORTS_LAYOUT),
 	fTaskLooper(NULL),
-	fIsTaskRunning(false),
 	fRunningTaskCount(0),
 	fShowCompletedStatus(false)
 {
-	// Temp file location
-/*	status_t status = find_directory(B_USER_CACHE_DIRECTORY, &fPkgmanListOut);
-	if (status != B_OK)
-		status = find_directory(B_SYSTEM_TEMP_DIRECTORY, &fPkgmanListOut); // alternate location
-	if (status == B_OK) {
-		fPkgmanListOut.Append("pkgman_task");
-	}*/
-	
 	// Column list view with 3 columns
 	fListView = new BColumnListView("list", B_NAVIGABLE, B_PLAIN_BORDER);
 	fListView->SetSelectionMessage(new BMessage(LIST_SELECTION_CHANGED));
@@ -157,7 +141,7 @@ DepotsView::~DepotsView()
 		fTaskLooper->Lock();
 		fTaskLooper->Quit();
 	}
-	_Clean();
+	_EmptyList();
 }
 
 
@@ -261,21 +245,13 @@ DepotsView::MessageReceived(BMessage* msg)
 			break;
 		}
 		case TASK_COMPLETE_WITH_ERRORS: {
-			BString repoName = msg->GetString(key_name, kNewRepoDefaultName.String());
-			int16 count;
-			status_t result1 = msg->FindInt16(key_count, &count);
-			RepoRow *rowItem;
-			status_t result2 = msg->FindPointer(key_rowptr, (void**)&rowItem);
-			if(result1 == B_OK && result2 == B_OK)
-				_TaskCompleted(rowItem, count, false, repoName);
 			BString errorDetails;
 			status_t result = msg->FindString(key_details, &errorDetails);
 			if(result == B_OK)
 			{// TODO seperate details view?
 				(new BAlert("error", errorDetails, kOKLabel, NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
 			}
-			_UpdateButtons();
-			break;
+			// Fall through
 		}
 		case TASK_COMPLETE: {
 			BString repoName = msg->GetString(key_name, kNewRepoDefaultName.String());
@@ -284,8 +260,10 @@ DepotsView::MessageReceived(BMessage* msg)
 			RepoRow *rowItem;
 			status_t result2 = msg->FindPointer(key_rowptr, (void**)&rowItem);
 			if(result1 == B_OK && result2 == B_OK)
-				_TaskCompleted(rowItem, count, true, repoName);
-		//		(new BAlert("complete", "Task complete.", "OK"))->Go(NULL);
+				_TaskCompleted(rowItem, count, msg->what==TASK_COMPLETE, repoName);
+			// If a repo was enabled, it is possible a repo on the same server was disabled- need to refresh all
+			if(rowItem->IsEnabled())
+				_UpdatePkgmanList(true);
 			_UpdateButtons();
 			break;
 		}
@@ -301,7 +279,6 @@ DepotsView::MessageReceived(BMessage* msg)
 			}
 			// Update the list since it is unsure what the final status of the depot is
 			_UpdatePkgmanList(true);
-				// TODO update only this one depot?
 			_UpdateButtons();
 			break;
 		}
@@ -326,7 +303,6 @@ DepotsView::_AddSelectedRowsToQueue()
 	RepoRow* rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
 	while(rowItem)
 	{
-		// TODO check if row is already in queue - could happen by fast double clicking?
 		rowItem->SetTaskState(STATE_IN_QUEUE_WAITING);
 		BMessage taskMsg(DO_TASK);
 		taskMsg.AddPointer(key_rowptr, rowItem);
@@ -339,10 +315,9 @@ DepotsView::_AddSelectedRowsToQueue()
 void
 DepotsView::_TaskStarted(RepoRow *rowItem, int16 count)
 {
-	fIsTaskRunning = true;
 	fRunningTaskCount = count;
 	rowItem->SetTaskState(STATE_IN_QUEUE_RUNNING);
-	// Only present a status count if there is more than one item in queue
+	// Only present a status count if there is more than one task in queue
 	if(count > 1)
 	{
 		_UpdateStatusView();
@@ -354,14 +329,12 @@ DepotsView::_TaskStarted(RepoRow *rowItem, int16 count)
 void
 DepotsView::_TaskCompleted(RepoRow *rowItem, int16 count, bool noErrors, BString& newName)
 {
-	if(count==0)
-		fIsTaskRunning = false;
 	fRunningTaskCount = count;
 	// If this is the last task show completed status text for 3 seconds
 	if(count==0 && fShowCompletedStatus)
 	{
 		fListStatusView->SetText(kStatusCompletedText);
-		BMessageRunner *mRunner = new BMessageRunner(this, new BMessage(UPDATE_STATUS_VIEW), 3000000, 1);
+		new BMessageRunner(this, new BMessage(UPDATE_STATUS_VIEW), 3000000, 1);
 		fShowCompletedStatus = false;
 	}
 	else
@@ -382,21 +355,18 @@ DepotsView::_TaskCompleted(RepoRow *rowItem, int16 count, bool noErrors, BString
 void
 DepotsView::_TaskCanceled(RepoRow *rowItem, int16 count)
 {
-	if(count==0)
-		fIsTaskRunning = false;
 	fRunningTaskCount = count;
 	// If this is the last task show completed status text for 3 seconds
 	if(count==0 && fShowCompletedStatus)
 	{
 		fListStatusView->SetText(kStatusCompletedText);
-		BMessageRunner *mRunner = new BMessageRunner(this, new BMessage(UPDATE_STATUS_VIEW), 3000000, 1);
+		new BMessageRunner(this, new BMessage(UPDATE_STATUS_VIEW), 3000000, 1);
 		fShowCompletedStatus = false;
 	}
 	else
 		_UpdateStatusView();
 	// Update row values
 	rowItem->SetTaskState(STATE_NOT_IN_QUEUE);
-//	rowItem->RefreshEnabledField();
 }
 
 
@@ -415,7 +385,7 @@ DepotsView::AddManualRepository(BString url)
 		const char *urlPtr = repoItem->Url();
 		if(url.ICompare(urlPtr) == 0)
 		{
-			(new BAlert("duplicate", B_TRANSLATE_COMMENT("Depot already exists.", "Error message"), kOKLabel))->Go();
+			(new BAlert("duplicate", B_TRANSLATE_COMMENT("Depot already exists.", "Error message"), kOKLabel))->Go(NULL);
 			return; 
 		}
 		//Find same root url
@@ -455,7 +425,7 @@ DepotsView::_GetRootUrl(BString url)
 
 
 status_t
-DepotsView::_Clean()
+DepotsView::_EmptyList()
 {
 	BRow* row;
 	while ((row = fListView->RowAt((int32)0, NULL)) != NULL) {
@@ -519,52 +489,10 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 	{
 		const BString& repoName = repositoryNames.StringAt(index);
 		result = pRoster.GetRepositoryConfig(repoName, &repoConfig);
-		if(result != B_OK)
-		{	//TODO
-			continue;
-		}
-		_AddRepo(repoName, repoConfig.BaseURL(), true);
+		if(result == B_OK)
+			_AddRepo(repoName, repoConfig.BaseURL(), true);
 	}
 	_SaveList();
-	
-/*	BString command("pkgman list > ");
-	command.Append(fPkgmanListOut.Path());
-	int sysResult = system(command.String());
-//	printf("result=%i", sysResult);
-	BFile listFile(fPkgmanListOut.Path(), B_READ_ONLY);
-	if(listFile.InitCheck()==B_OK)
-	{
-		off_t size;
-		listFile.GetSize(&size);
-		char buffer[size];
-		size_t bytes = listFile.Read(buffer, size);
-		BString text(buffer, bytes);
-//		printf(text.String());
-		BStringList pkgmanOutput;
-		text.Split("\n", true, pkgmanOutput);
-		// Read each set of enabled repos from 3 lines of pkgman output
-		while(pkgmanOutput.CountStrings() > 2)
-		{
-			BString name = pkgmanOutput.StringAt(0);
-			BString url = pkgmanOutput.StringAt(1);
-			pkgmanOutput.Remove(0,3);
-			// remove leading tabs and spaces
-			int index = 0;
-			while(name[index] == ' ' || name[index] == '\t')
-				index++;
-			name.RemoveChars(0, index);
-			url.RemoveFirst("base-url:");
-			index = 0;
-			while(url[index] == ' ' || url[index] == '\t')
-				index++;
-			url.RemoveChars(0, index);
-			_AddRepo(name, url, true);
-		}
-		_SaveList();
-		listFile.Unset();
-		BEntry tmpEntry(fPkgmanListOut.Path());
-		tmpEntry.Remove();
-	}*/
 }
 
 void
@@ -592,7 +520,7 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 	RepoRow *addedRow=NULL;
 	int32 index;
 	int32 listCount = fListView->CountRows();
-	// Find matching URL or names
+	// Find if the repo already exists in list
 	for(index=0; index < listCount; index++)
 	{
 		RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
@@ -604,11 +532,6 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 			repoItem->SetEnabled(enabled);
 			addedRow = repoItem;
 		}
-		else if(name.Compare(repoItem->Name()) == 0)
-		{	
-			repoItem->SetEnabled(false);
-		}
-
 	}
 	if(addedRow == NULL)
 	{

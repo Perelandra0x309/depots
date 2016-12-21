@@ -150,7 +150,7 @@ DepotsWindow::MessageReceived(BMessage* msg)
 		}
 		case B_NODE_MONITOR: { // captures pkgman changes while Depots application is running
 			// This app is making changes, so ignore this message
-			if(fView->IsTaskRunning()) // TODO how to handle this now?
+			if(fView->IsTaskRunning())
 				break;
 			
 			int32 opcode;

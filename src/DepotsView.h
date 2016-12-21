@@ -6,8 +6,6 @@
 #define DEPOTS_VIEW_H
 
 #include <ColumnListView.h>
-#include <GroupView.h>
-#include <ObjectList.h>
 #include <String.h>
 #include <StringView.h>
 #include <View.h>
@@ -15,7 +13,6 @@
 #include "DepotsSettings.h"
 #include "RepoRow.h"
 #include "TaskLooper.h"
-#include "TaskTimer.h"
 
 
 class DepotsView : public BView {
@@ -26,14 +23,13 @@ public:
 	virtual void			AttachedToWindow();
 	virtual void			MessageReceived(BMessage*);
 	void					AddManualRepository(BString url);
-	bool					IsTaskRunning() { return fIsTaskRunning; }
+	bool					IsTaskRunning() { return fRunningTaskCount>0; }
 private:
-//	BPath					fPkgmanListOut;
 	DepotsSettings			fSettings;
 	BColumnListView			*fListView;
 	BStringView				*fListStatusView;
 	TaskLooper				*fTaskLooper;
-	bool					fIsTaskRunning, fShowCompletedStatus;
+	bool					fShowCompletedStatus;
 	int						fRunningTaskCount;
 	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
 	
@@ -45,7 +41,7 @@ private:
 	
 	// GUI functions
 	BString					_GetRootUrl(BString url);
-	status_t				_Clean();
+	status_t				_EmptyList();
 	void					_InitList();
 	void					_UpdatePkgmanList(bool updateStatusOnly=false);
 	void					_SaveList();

@@ -105,6 +105,15 @@ TaskLooper::MessageReceived(BMessage *msg)
 			status_t result = msg->FindPointer(key_rowptr, (void**)&rowItem);
 			if(result==B_OK)
 			{
+				// Check to make sure there isn't already an existing task for this
+				int queueCount = fTaskQueue.CountItems();
+				for(int index=0; index<queueCount; index++)
+				{
+					Task *task = fTaskQueue.ItemAt(index);
+					if(rowItem == task->rowItem)
+						break;
+				}
+				
 				// Initialize task
 				Task *newTask = new Task();
 				newTask->rowItem = rowItem;
