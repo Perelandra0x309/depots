@@ -37,6 +37,7 @@ DepotsView::DepotsView()
 	BView("depotsview", B_SUPPORTS_LAYOUT),
 	fTaskLooper(NULL),
 	fRunningTaskCount(0),
+	fLastCompletedTimerId(0),
 	fShowCompletedStatus(false)
 {
 	// Column list view with 3 columns
@@ -56,7 +57,7 @@ DepotsView::DepotsView()
 	// Depot list status view
 	BView *statusContainerView = new BView("status", B_SUPPORTS_LAYOUT);
 	BString templateText(kStatusViewText);
-	templateText.Append("88"); // Simulate a status text with two digit queue count
+	templateText.Append(" 88"); // Simulate a status text with two digit queue count
 	fListStatusView = new BStringView("status", templateText);
 	// Set a smaller fixed font size and slightly lighten text color
 	BFont font(be_plain_font);
@@ -286,8 +287,11 @@ DepotsView::MessageReceived(BMessage* msg)
 			_UpdateButtons();
 			break;
 		}
-		case UPDATE_STATUS_VIEW: {
-			_UpdateStatusView();
+		case STATUS_VIEW_COMPLETED_TIMEOUT: {
+			int32 timerID;
+			status_t result = msg->FindInt32(key_ID, &timerID);
+			if(result == B_OK && timerID == fLastCompletedTimerId)
+				_UpdateStatusView();
 			break;
 		}
 		default:
@@ -333,7 +337,10 @@ DepotsView::_TaskCompleted(RepoRow *rowItem, int16 count, bool noErrors, BString
 	if(count==0 && fShowCompletedStatus)
 	{
 		fListStatusView->SetText(kStatusCompletedText);
-		new BMessageRunner(this, new BMessage(UPDATE_STATUS_VIEW), 3000000, 1);
+		fLastCompletedTimerId = rand();
+		BMessage timerMsg(STATUS_VIEW_COMPLETED_TIMEOUT);
+		timerMsg.AddInt32(key_ID, fLastCompletedTimerId);
+		new BMessageRunner(this, &timerMsg, 3000000, 1);
 		fShowCompletedStatus = false;
 	}
 	else
@@ -359,7 +366,10 @@ DepotsView::_TaskCanceled(RepoRow *rowItem, int16 count)
 	if(count==0 && fShowCompletedStatus)
 	{
 		fListStatusView->SetText(kStatusCompletedText);
-		new BMessageRunner(this, new BMessage(UPDATE_STATUS_VIEW), 3000000, 1);
+		fLastCompletedTimerId = rand();
+		BMessage timerMsg(STATUS_VIEW_COMPLETED_TIMEOUT);
+		timerMsg.AddInt32(key_ID, fLastCompletedTimerId);
+		new BMessageRunner(this, &timerMsg, 3000000, 1);
 		fShowCompletedStatus = false;
 	}
 	else
@@ -612,6 +622,7 @@ DepotsView::_UpdateStatusView()
 	if(fRunningTaskCount)
 	{
 		BString text(kStatusViewText);
+		text.Append(" ");
 		text<<fRunningTaskCount;
 		fListStatusView->SetText(text);
 	}

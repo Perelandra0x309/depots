@@ -30,7 +30,7 @@ private:
 	BStringView				*fListStatusView;
 	TaskLooper				*fTaskLooper;
 	bool					fShowCompletedStatus;
-	int						fRunningTaskCount;
+	int						fRunningTaskCount, fLastCompletedTimerId;
 	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
 	
 	// Message helpers

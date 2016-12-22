@@ -61,14 +61,14 @@ TaskTimer::MessageReceived(BMessage *msg)
 			fMsgRunner = NULL;
 			if(fTimerIsRunning)
 			{
-				BString text(B_TRANSLATE_COMMENT("Task for depot %name% is taking a long time to complete.",
+				BString text(B_TRANSLATE_COMMENT("The task for depot %name% is taking a long time to complete.",
 								"Alert message.  Do not translate %name%"));
 				BString nameString("\"");
 				nameString.Append(fDepotName).Append("\"");
 				text.ReplaceFirst("%name%", nameString);
 				fTimeoutAlert = new BAlert("timeout", text, B_TRANSLATE_COMMENT("Keep trying", "Button label"),
 											B_TRANSLATE_COMMENT("Cancel task", "Button label"), NULL,
-												B_WIDTH_AS_USUAL, B_OFFSET_SPACING, B_WARNING_ALERT);
+												B_WIDTH_AS_USUAL, B_WARNING_ALERT);
 				fTimeoutAlert->SetShortcut(0, B_ESCAPE);
 				fTimeoutAlert->Go(&fTimeoutAlertInvoker);
 			}
@@ -132,7 +132,7 @@ TaskTimer::Stop(const char *name)
 		fTimeoutAlert = NULL;
 		
 		// Display new alert that won't send a message
-		BString text(B_TRANSLATE_COMMENT("Good news! Task for repository %name% completed.",
+		BString text(B_TRANSLATE_COMMENT("Good news! The task for repository %name% completed.",
 						"Alert message.  Do not translate %name%"));
 		BString nameString("\"");
 		nameString.Append(name).Append("\"");

@@ -15,7 +15,7 @@
 
 AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 	:
-	BWindow(size, "AddWindow", B_MODAL_WINDOW, //B_NOT_V_RESIZABLE | 
+	BWindow(size, "AddWindow", B_MODAL_WINDOW, B_NOT_RESIZABLE | 
 		B_ASYNCHRONOUS_CONTROLS |  B_AUTO_UPDATE_SIZE_LIMITS | B_CLOSE_ON_ESCAPE),
 	fMsgLooper(looper)
 {
@@ -23,14 +23,16 @@ AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 	fView->SetExplicitMinSize(BSize(size.Width(), B_SIZE_UNSET));
 	fText = new BTextControl("text", B_TRANSLATE_COMMENT("Depot URL:", "Text box label"), "", new BMessage(ADD_BUTTON_PRESSED));
 	fAddButton = new BButton(B_TRANSLATE_COMMENT("Add", "Button label"), new BMessage(ADD_BUTTON_PRESSED));
+	fAddButton->MakeDefault(true);
 	fCancelButton = new BButton(kCancelLabel, new BMessage(CANCEL_BUTTON_PRESSED));
 	
 	BLayoutBuilder::Group<>(fView, B_VERTICAL)
 		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
 		.Add(fText)
 		.AddGroup(B_HORIZONTAL, B_USE_DEFAULT_SPACING)
-			.Add(fAddButton)
-			.Add(fCancelButton);
+			.AddGlue()
+			.Add(fCancelButton)
+			.Add(fAddButton);
 	BLayoutBuilder::Group<>(this, B_VERTICAL)
 		.Add(fView);
 	fText->MakeFocus();

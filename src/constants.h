@@ -41,6 +41,7 @@ static const Repository kDefaultRepos[] = {
 #define key_rowptr "row_ptr"
 #define key_taskptr "task_ptr"
 #define key_count "count"
+#define key_ID "ID"
 
 //Messages
 enum {
@@ -54,7 +55,7 @@ enum {
 	DISABLE_BUTTON_PRESSED,
 	ITEM_INVOKED,
 	DO_TASK,
-	UPDATE_STATUS_VIEW,
+	STATUS_VIEW_COMPLETED_TIMEOUT,
 	TASK_STARTED,
 	TASK_COMPLETE,
 	TASK_COMPLETE_WITH_ERRORS,
