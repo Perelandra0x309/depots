@@ -8,6 +8,7 @@
 #include <ColumnTypes.h>
 #include <LayoutBuilder.h>
 #include <MessageRunner.h>
+#include <ScrollBar.h>
 #include <SeparatorView.h>
 #include <package/PackageRoster.h>
 #include <package/RepositoryConfig.h>
@@ -57,26 +58,32 @@ DepotsView::DepotsView()
 	// Depot list status view
 	BView *statusContainerView = new BView("status", B_SUPPORTS_LAYOUT);
 	BString templateText(kStatusViewText);
-	templateText.Append(" 88"); // Simulate a status text with two digit queue count
+	templateText.Append(" 88");
+		// Simulate a status text with two digit queue count
 	fListStatusView = new BStringView("status", templateText);
 	// Set a smaller fixed font size and slightly lighten text color
 	BFont font(be_plain_font);
 	font.SetSize(10.0f);
 	fListStatusView->SetFont(&font, B_FONT_SIZE);
 	fListStatusView->SetHighUIColor(fListStatusView->HighUIColor(), .9f);
-	// Set appropriate explicit view size
-	BSize statusViewSize = fListStatusView->PreferredSize();
-	float viewWidth = max_c(fListStatusView->StringWidth(templateText), fListStatusView->StringWidth(kStatusCompletedText));
-	statusViewSize.width = viewWidth + 3;
+	// Set appropriate explicit view sizes
+	float viewWidth = max_c(fListStatusView->StringWidth(templateText),
+		fListStatusView->StringWidth(kStatusCompletedText));
+	BSize statusViewSize(viewWidth + 3, B_H_SCROLL_BAR_HEIGHT - 2);
+	fListStatusView->SetExplicitSize(statusViewSize);
 	statusViewSize.height += 1;
 	statusContainerView->SetExplicitSize(statusViewSize);
-	BLayoutBuilder::Group<>(statusContainerView, B_VERTICAL, 0)
-		.AddGroup(B_HORIZONTAL, 1)
-			.Add(new BSeparatorView(B_VERTICAL))
-			.Add(fListStatusView)
+	BLayoutBuilder::Group<>(statusContainerView, B_HORIZONTAL, 0)
+		.Add(new BSeparatorView(B_VERTICAL))
+		.AddGroup(B_VERTICAL, 0)
 			.AddGlue()
-		.End()
-		.Add(new BSeparatorView(B_HORIZONTAL));
+			.AddGroup(B_HORIZONTAL, 0)
+				.SetInsets(2,0,0,0)
+				.Add(fListStatusView)
+				.AddGlue()
+			.End()
+			.Add(new BSeparatorView(B_HORIZONTAL))
+		.End();
 	fListView->AddStatusView(statusContainerView);
 	
 	// Standard buttons
@@ -86,7 +93,8 @@ DepotsView::DepotsView()
 	// Create buttons with fixed size
 	font_height fontHeight;
 	GetFontHeight(&fontHeight);
-	int buttonHeight = int(fontHeight.ascent + fontHeight.descent + 12); // button size determined by font size
+	int buttonHeight = int(fontHeight.ascent + fontHeight.descent + 12);
+		// button size determined by font size
 	BSize btnSize(buttonHeight,buttonHeight);
 	
 	fAddButton = new BButton("plus", "+", new BMessage(ADD_REPO_WINDOW));
