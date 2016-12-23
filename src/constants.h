@@ -11,6 +11,7 @@
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "Constants"
 
+static const float kAddWindowOffset = 10.0;
 static const int kTimerAlertOffset = 15;
 static const int kTimerTimeoutSeconds = 10;
 
