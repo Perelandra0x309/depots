@@ -71,9 +71,15 @@ TaskTimer::MessageReceived(BMessage *msg)
 											B_TRANSLATE_COMMENT("Cancel task", "Button label"), NULL,
 												B_WIDTH_AS_USUAL, B_WARNING_ALERT);
 				fTimeoutAlert->SetShortcut(0, B_ESCAPE);
+				// Calculate the position to correctly stack this alert
 				BRect windowFrame = be_app->WindowAt(0)->Frame();
+				int32 stackPos = _NextAlertStackCount();
+				float xPos = windowFrame.left + windowFrame.Width()/2 + stackPos*kTimerAlertOffset;
+				float yPos = windowFrame.top + (stackPos + 1)*kTimerAlertOffset;
 				fTimeoutAlert->Go(&fTimeoutAlertInvoker);
-				fTimeoutAlert->CenterIn(windowFrame);
+				xPos -= fTimeoutAlert->Frame().Width()/2;
+					// The correct frame for the alert is not available until after Go is called
+				fTimeoutAlert->MoveTo(xPos, yPos);
 			}
 			break;
 		}
@@ -146,4 +152,12 @@ TaskTimer::Stop(const char *name)
 		newAlert->MoveTo(frame.left, frame.top);
 		newAlert->Go(NULL);
 	}
+}
+
+int32
+TaskTimer::_NextAlertStackCount()
+{
+	if(sAlertStackCount > 9)
+		sAlertStackCount = 0;
+	return sAlertStackCount++;
 }

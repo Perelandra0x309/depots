@@ -30,6 +30,8 @@ typedef struct {
 } Task;
 
 
+static int32 sAlertStackCount = 0;
+
 class TaskTimer : public BLooper {
 public:
 							TaskTimer(BLooper *target, Task *owner);
@@ -49,6 +51,7 @@ private:
 	BAlert					*fTimeoutAlert;
 	BInvoker				fTimeoutAlertInvoker;
 	Task					*fOwner;
+	int32					_NextAlertStackCount();
 };
 
 #endif
