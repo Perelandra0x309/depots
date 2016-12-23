@@ -24,7 +24,8 @@ DepotsWindow::DepotsWindow()
 	:
 	BWindow(BRect(50,50,500,400), B_TRANSLATE_SYSTEM_NAME("Depots"), B_TITLED_WINDOW,
 					B_NOT_ZOOMABLE | B_ASYNCHRONOUS_CONTROLS),
-	fPackageNodeStatus(B_ERROR)
+	fPackageNodeStatus(B_ERROR),
+	fAddWindow(NULL)
 {
 	fView = new DepotsView();
 	BLayoutBuilder::Group<>(this, B_VERTICAL).Add(fView);
@@ -102,7 +103,7 @@ DepotsWindow::QuitRequested()
 {
 	if(fView->IsTaskRunning())
 	{
-		int32 result = (new BAlert("tasks", B_TRANSLATE_COMMENT("Tasks are still running. Stop tasks "
+		int32 result = (new BAlert("tasks", B_TRANSLATE_COMMENT("Some tasks are still running. Stop these tasks "
 										"and quit?", "Alert message"), "No", "Yes", NULL,
 										B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
 		if(result == 0)
@@ -121,8 +122,8 @@ DepotsWindow::MessageReceived(BMessage* msg)
 	{
 		case ADD_REPO_WINDOW: {
 			BRect frame = Frame();
-			frame.right -= 2*kAddWindowOffset;
-			new AddRepoWindow(frame, this);
+		//	frame.right -= 2*kAddWindowOffset;
+			fAddWindow = new AddRepoWindow(frame, this);
 			break;
 		}
 		case ADD_REPO_URL: {
@@ -130,6 +131,10 @@ DepotsWindow::MessageReceived(BMessage* msg)
 			status_t result = msg->FindString(key_url, &url);
 			if(result == B_OK)
 				fView->AddManualRepository(url);
+			break;
+		}
+		case ADD_WINDOW_CLOSED: {
+			fAddWindow = NULL;
 			break;
 		}
 		case TASK_STARTED:
@@ -166,3 +171,25 @@ DepotsWindow::MessageReceived(BMessage* msg)
 	}
 }
 
+
+void
+DepotsWindow::FrameMoved(BPoint newPosition)
+{
+	if(fAddWindow)
+	{
+		BRect frame = Frame();
+		fAddWindow->MoveTo(frame.left, frame.bottom - fAddWindow->Frame().Height());
+	}
+}
+
+
+void
+DepotsWindow::FrameResized(float newWidth, float newHeight)
+{
+	if(fAddWindow)
+	{
+		BRect frame = Frame();
+		fAddWindow->SetWidth(frame.Width());
+		fAddWindow->MoveTo(frame.left, frame.bottom - fAddWindow->Frame().Height());
+	}
+}

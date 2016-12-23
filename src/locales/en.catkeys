@@ -1,4 +1,4 @@
-1	English	application/x-vnd.BH-Depots	3667943264
+1	English	application/x-vnd.BH-Depots	422671837
 The URL must start with a protocol, for example http:// or https://	AddRepoWindow	Add URL error message	The URL must start with a protocol, for example http:// or https://
 Add	AddRepoWindow	Button label	Add
 Depot URL:	AddRepoWindow	Text box label	Depot URL:
@@ -8,7 +8,7 @@ Unknown	Constants	Unknown depot name	Unknown
 Depots preflet version 1.1.0	DepotsApplication	About box line 1	Depots preflet version 1.1.0
 Copyright © 2016 by Brian Hill	DepotsApplication	About box line 2	Copyright © 2016 by Brian Hill
 This preflet will enable and disable depots used with Haiku package management.	DepotsApplication	About box line 3	This preflet will enable and disable depots used with Haiku package management.
-Could not retrieve names of currently enabled depots.	DepotsView	Alert error message	Could not retrieve names of currently enabled depots.
+Depots could not retrieve the names of the currently enabled depots.	DepotsView	Alert error message	Depots could not retrieve the names of the currently enabled depots.
 Disable	DepotsView	Button label	Disable
 Disable All	DepotsView	Button label	Disable All
 Enable	DepotsView	Button label	Enable
@@ -18,12 +18,12 @@ Remove All	DepotsView	Button label	Remove All
 Enabled	DepotsView	Column title	Enabled
 Name	DepotsView	Column title	Name
 URL	DepotsView	Column title	URL
-Depot already exists.	DepotsView	Error message	Depot already exists.
-You can only enable one URL for each depot.  Please change your selections.	DepotsView	Error message	You can only enable one URL for each depot.  Please change your selections.
+Only one URL for each depot can be enabled.  Please change your selections.	DepotsView	Error message	Only one URL for each depot can be enabled.  Please change your selections.
+This depot URL already exists.	DepotsView	Error message	This depot URL already exists.
 Select depots to use with Haiku package management:	DepotsView	Label text	Select depots to use with Haiku package management:
 Changes completed	DepotsView	Status view text	Changes completed
 Changes pending:	DepotsView	Status view text	Changes pending:
-Tasks are still running. Stop tasks and quit?	DepotsWindow	Alert message	Tasks are still running. Stop tasks and quit?
+Some tasks are still running. Stop these tasks and quit?	DepotsWindow	Alert message	Some tasks are still running. Stop these tasks and quit?
 Depots	System name		Depots
 Aborted	TaskLooper	Aborted task status message	Aborted
 Completed	TaskLooper	Completed task status message	Completed
@@ -33,7 +33,7 @@ There was an error enabling the depot %url%	TaskLooper	Error message, do not tra
 Description	TaskLooper	Failed task error description	Description
 Failed	TaskLooper	Failed task status message	Failed
 Details	TaskLooper	Job log details header	Details
-Good news! Task for repository %name% completed.	TaskTimer	Alert message.  Do not translate %name%	Good news! Task for repository %name% completed.
-Task for depot %name% is taking a long time to complete.	TaskTimer	Alert message.  Do not translate %name%	Task for depot %name% is taking a long time to complete.
+Good news! The task for repository %name% completed.	TaskTimer	Alert message.  Do not translate %name%	Good news! The task for repository %name% completed.
+The task for depot %name% is taking a long time to complete.	TaskTimer	Alert message.  Do not translate %name%	The task for depot %name% is taking a long time to complete.
 Cancel task	TaskTimer	Button label	Cancel task
 Keep trying	TaskTimer	Button label	Keep trying

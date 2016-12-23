@@ -213,9 +213,8 @@ DepotsView::MessageReceived(BMessage* msg)
 			{
 				if(names.HasString(rowItem->Name()) && kNewRepoDefaultName.Compare(rowItem->Name()) != 0)
 				{
-					(new BAlert("duplicate", B_TRANSLATE_COMMENT("You can only enable one URL for "
-									"each depot.  Please change your selections.", "Error message"),
-									kOKLabel, NULL, NULL,
+					(new BAlert("duplicate", B_TRANSLATE_COMMENT("Only one URL for each depot can be enabled."
+									"  Please change your selections.", "Error message"), kOKLabel, NULL, NULL,
 									B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
 					paramsOK = false;
 					break;
@@ -394,7 +393,7 @@ DepotsView::AddManualRepository(BString url)
 		const char *urlPtr = repoItem->Url();
 		if(url.ICompare(urlPtr) == 0)
 		{
-			(new BAlert("duplicate", B_TRANSLATE_COMMENT("Depot already exists.", "Error message"), kOKLabel))->Go(NULL);
+			(new BAlert("duplicate", B_TRANSLATE_COMMENT("This depot URL already exists.", "Error message"), kOKLabel))->Go(NULL);
 			return; 
 		}
 		//Find same root url
@@ -487,7 +486,7 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 	status_t result = pRoster.GetRepositoryNames(repositoryNames);
 	if(result != B_OK)
 	{
-		(new BAlert("error", B_TRANSLATE_COMMENT("Could not retrieve names of currently enabled depots.",
+		(new BAlert("error", B_TRANSLATE_COMMENT("Depots could not retrieve the names of the currently enabled depots.",
 								"Alert error message"),
 								"OK", NULL, NULL, B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go(NULL);
 		return;

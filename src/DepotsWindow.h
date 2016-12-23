@@ -8,6 +8,7 @@
 #include <Node.h>
 #include <Window.h>
 
+#include "AddRepoWindow.h"
 #include "DepotsSettings.h"
 #include "DepotsView.h"
 
@@ -18,9 +19,12 @@ public:
 							~DepotsWindow();
 	virtual	bool			QuitRequested();
 	virtual void			MessageReceived(BMessage*);
+	virtual void			FrameMoved(BPoint newPosition);
+	virtual void			FrameResized(float newWidth, float newHeight);
 private:
 	DepotsSettings			fSettings;
 	DepotsView				*fView;
+	AddRepoWindow			*fAddWindow;
 	node_ref				fPackageNodeRef;//node_ref to watch for changes to package-repositories directory
 	status_t				fPackageNodeStatus;
 	bool					fWatchingPackageNode;//true when package-repositories directory is being watched

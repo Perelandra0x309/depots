@@ -2,6 +2,7 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
+#include <Application.h>
 #include <Catalog.h>
 
 #include "constants.h"
@@ -24,7 +25,7 @@ TaskTimer::TaskTimer(BLooper *target, Task *owner)
 {
 	Run();
 	
-//	fTimeoutMicroSeconds = 1000000;//TODO remove debug code
+	fTimeoutMicroSeconds = 1000000;//TODO remove debug code
 	// Messenger for the Message Runner to use to send its message to the timer
 	fMessenger.SetTo(this);
 	// Invoker for the Alerts to use to send their messages to the timer
@@ -70,7 +71,9 @@ TaskTimer::MessageReceived(BMessage *msg)
 											B_TRANSLATE_COMMENT("Cancel task", "Button label"), NULL,
 												B_WIDTH_AS_USUAL, B_WARNING_ALERT);
 				fTimeoutAlert->SetShortcut(0, B_ESCAPE);
+				BRect windowFrame = be_app->WindowAt(0)->Frame();
 				fTimeoutAlert->Go(&fTimeoutAlertInvoker);
+				fTimeoutAlert->CenterIn(windowFrame);
 			}
 			break;
 		}
