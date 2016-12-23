@@ -50,7 +50,10 @@ void
 RepoRow::RefreshEnabledField()
 {
 	BStringField *field = (BStringField*)GetField(kEnabledColumn);
-	field->SetString(fEnabled ? "\xE2\x9C\x94" : "");
+	if(fTaskState == STATE_NOT_IN_QUEUE)
+		field->SetString(fEnabled ? "\xE2\x9C\x94" : "");
+	else
+		field->SetString(B_UTF8_ELLIPSIS);
 	Invalidate();
 }
 
@@ -59,22 +62,5 @@ void
 RepoRow::SetTaskState(uint32 state)
 {
 	fTaskState = state;
-	switch(state)
-	{
-		case STATE_IN_QUEUE_WAITING: {
-			BStringField *field = (BStringField*)GetField(kEnabledColumn);
-			field->SetString(B_UTF8_ELLIPSIS);
-			Invalidate();
-			break;
-		}
-	/*	case STATE_IN_QUEUE_RUNNING: {
-			BStringField *field = (BStringField*)GetField(kEnabledColumn);
-			if(IsEnabled())
-				field->SetString(B_TRANSLATE("Disabling..."));
-			else
-				field->SetString(B_TRANSLATE("Enabling..."));
-			Invalidate();
-			break;
-		}*/
-	}
+	RefreshEnabledField();
 }

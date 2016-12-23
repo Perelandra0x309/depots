@@ -484,7 +484,8 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 		for(index=0; index < listCount; index++)
 		{
 			RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
-			repoItem->SetEnabled(false);
+			if(repoItem->TaskState() == STATE_NOT_IN_QUEUE)
+				repoItem->SetEnabled(false);
 		}
 	}
 	
