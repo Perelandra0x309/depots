@@ -19,11 +19,11 @@
 
 AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 	:
-	BWindow(size.InsetByCopy(2*kAddWindowOffset, 0.0), "AddWindow",
+	BWindow(BRect(0,0,10,10), "AddWindow",
 		/*B_BORDERED_WINDOW_LOOK, B_MODAL_APP_WINDOW_FEEL,*/
 		B_MODAL_WINDOW, 
-		B_NOT_RESIZABLE | B_NOT_MOVABLE | B_ASYNCHRONOUS_CONTROLS
-			| B_AUTO_UPDATE_SIZE_LIMITS | B_CLOSE_ON_ESCAPE),
+		/*B_NOT_RESIZABLE | B_NOT_MOVABLE | */
+		B_ASYNCHRONOUS_CONTROLS	| B_AUTO_UPDATE_SIZE_LIMITS | B_CLOSE_ON_ESCAPE),
 	fReplyLooper(looper)
 {
 	fView = new BView("view", B_SUPPORTS_LAYOUT);
@@ -34,7 +34,6 @@ AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 	fAddButton->MakeDefault(true);
 	fCancelButton = new BButton(kCancelLabel,
 		new BMessage(CANCEL_BUTTON_PRESSED));
-//	SetWidth(size.Width());
 	
 	BLayoutBuilder::Group<>(fView, B_VERTICAL)
 		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING,
@@ -50,6 +49,7 @@ AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 	
 	// Move to bottom of window
 	Layout(true);
+	SetWidth(size.Width() - 2*kAddWindowOffset);
 //	MoveTo(size.left, size.bottom - Frame().Height());
 	CenterIn(size);
 	Show();
@@ -97,7 +97,8 @@ AddRepoWindow::MessageReceived(BMessage* message)
 				//	alert->Go(&fDummyInvoker);
 					BRect windowFrame = be_app->WindowAt(0)->Frame();
 					alert->Go(NULL);
-					alert->CenterIn(windowFrame);
+					alert->CenterIn(Frame());
+					alert->MoveBy(0, kAddWindowOffset);
 				}
 				else {
 					BMessage *addMessage = new BMessage(ADD_REPO_URL);
