@@ -5,6 +5,7 @@
 #ifndef ADD_REPO_WINDOW_H
 #define ADD_REPO_WINDOW_H
 
+
 #include <Button.h>
 #include <TextControl.h>
 #include <View.h>
@@ -17,6 +18,7 @@ public:
 	virtual void			MessageReceived(BMessage*);
 	virtual void			Quit();
 	void					SetWidth(float width);
+
 private:
 	BView					*fView;
 	BTextControl			*fText;

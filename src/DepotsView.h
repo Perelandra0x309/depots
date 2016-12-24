@@ -5,6 +5,7 @@
 #ifndef DEPOTS_VIEW_H
 #define DEPOTS_VIEW_H
 
+
 #include <ColumnListView.h>
 #include <String.h>
 #include <StringView.h>
@@ -24,6 +25,7 @@ public:
 	virtual void			MessageReceived(BMessage*);
 	void					AddManualRepository(BString url);
 	bool					IsTaskRunning() { return fRunningTaskCount>0; }
+
 private:
 	DepotsSettings			fSettings;
 	BColumnListView			*fListView;
@@ -31,12 +33,14 @@ private:
 	TaskLooper				*fTaskLooper;
 	bool					fShowCompletedStatus;
 	int						fRunningTaskCount, fLastCompletedTimerId;
-	BButton					*fAboutButton, *fAddButton, *fRemoveButton, *fEnableButton, *fDisableButton;
+	BButton					*fAboutButton, *fAddButton, *fRemoveButton,
+							*fEnableButton, *fDisableButton;
 	
 	// Message helpers
 	void					_AddSelectedRowsToQueue();
 	void					_TaskStarted(RepoRow *rowItem, int16 count);
-	void					_TaskCompleted(RepoRow *rowItem, int16 count, bool noErrors, BString& newName);
+	void					_TaskCompleted(RepoRow *rowItem, int16 count,
+								bool noErrors, BString& newName);
 	void					_TaskCanceled(RepoRow *rowItem, int16 count);
 	
 	// GUI functions

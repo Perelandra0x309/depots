@@ -2,10 +2,13 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
+
+
+#include "RepoRow.h"
+
 #include <ColumnTypes.h>
 
 #include "constants.h"
-#include "RepoRow.h"
 
 
 #undef B_TRANSLATION_CONTEXT

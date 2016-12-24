@@ -5,6 +5,7 @@
 #ifndef TASKTIMER_H
 #define TASKTIMER_H
 
+
 #include <Alert.h>
 #include <Invoker.h>
 #include <Looper.h>
@@ -40,13 +41,14 @@ public:
 	virtual void			MessageReceived(BMessage*);
 	void					Start(const char *name);
 	void					Stop(const char *name);
+
 private:
 	int32					fTimeoutMicroSeconds;
 	bool					fTimerIsRunning;
 	BString					fDepotName;
 	BLooper					*fReplyTarget;
 	BMessenger				fMessenger;
-	BMessageRunner			*fMsgRunner;
+	BMessageRunner			*fMessageRunner;
 	BMessage				fTimeoutMessage;
 	BAlert					*fTimeoutAlert;
 	BInvoker				fTimeoutAlertInvoker;

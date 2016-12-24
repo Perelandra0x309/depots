@@ -5,6 +5,7 @@
 #ifndef DEPOTS_SETTINGS_H
 #define DEPOTS_SETTINGS_H
 
+
 #include <File.h>
 #include <Message.h>
 #include <Path.h>

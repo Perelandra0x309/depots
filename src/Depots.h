@@ -5,6 +5,7 @@
 #ifndef DEPOTS_H
 #define DEPOTS_H
 
+
 #include <Application.h>
 #include <Point.h>
 #include <Rect.h>
@@ -17,9 +18,11 @@ class URLView : public BStringView {
 public:
 							URLView(const char *name, const char *url);
 	virtual void			DetachedFromWindow();
-	virtual void			MouseMoved(BPoint where, uint32 code, const BMessage *dragMessage);
+	virtual void			MouseMoved(BPoint where, uint32 code,
+								const BMessage *dragMessage);
 	virtual void			MouseDown(BPoint point);
 	virtual void			Draw(BRect bounds);
+
 private:
 	BString					fUrl;
 	bool					fMouseOver;
@@ -29,6 +32,7 @@ class DepotsApplication : public BApplication {
 public:
 							DepotsApplication();
 	virtual void			AboutRequested();
+
 private:
 	DepotsWindow			*fWindow;
 };

@@ -5,6 +5,7 @@
 #ifndef DEPOTS_WINDOW_H
 #define DEPOTS_WINDOW_H
 
+
 #include <Node.h>
 #include <Window.h>
 
@@ -21,13 +22,16 @@ public:
 	virtual void			MessageReceived(BMessage*);
 	virtual void			FrameMoved(BPoint newPosition);
 	virtual void			FrameResized(float newWidth, float newHeight);
+
 private:
 	DepotsSettings			fSettings;
 	DepotsView				*fView;
 	AddRepoWindow			*fAddWindow;
-	node_ref				fPackageNodeRef;//node_ref to watch for changes to package-repositories directory
+	node_ref				fPackageNodeRef;
+		//node_ref to watch for changes to package-repositories directory
 	status_t				fPackageNodeStatus;
-	bool					fWatchingPackageNode;//true when package-repositories directory is being watched
+	bool					fWatchingPackageNode;
+		//true when package-repositories directory is being watched
 	void					_StartWatching();
 	void					_StopWatching();
 };

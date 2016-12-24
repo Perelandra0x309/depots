@@ -2,6 +2,10 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
+
+
+#include "DepotsView.h"
+
 #include <Alert.h>
 #include <Button.h>
 #include <Catalog.h>
@@ -14,23 +18,31 @@
 #include <package/RepositoryConfig.h>
 
 #include "constants.h"
-#include "DepotsView.h"
 
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "DepotsView"
 
 
-static const BString kTitleEnabled = B_TRANSLATE_COMMENT("Enabled", "Column title");
+static const BString kTitleEnabled = B_TRANSLATE_COMMENT("Enabled",
+	"Column title");
 static const BString kTitleName = B_TRANSLATE_COMMENT("Name", "Column title");
 static const BString kTitleUrl = B_TRANSLATE_COMMENT("URL", "Column title");
-static const BString kLabelRemove = B_TRANSLATE_COMMENT("Remove", "Button label");
-static const BString kLabelRemoveAll = B_TRANSLATE_COMMENT("Remove All", "Button label");
-static const BString kLabelEnable = B_TRANSLATE_COMMENT("Enable", "Button label");
-static const BString kLabelEnableAll = B_TRANSLATE_COMMENT("Enable All", "Button label");
-static const BString kLabelDisable = B_TRANSLATE_COMMENT("Disable", "Button label");
-static const BString kLabelDisableAll = B_TRANSLATE_COMMENT("Disable All", "Button label");
-static const BString kStatusViewText = B_TRANSLATE_COMMENT("Changes pending:", "Status view text");
-static const BString kStatusCompletedText = B_TRANSLATE_COMMENT("Changes completed", "Status view text");
+static const BString kLabelRemove = B_TRANSLATE_COMMENT("Remove",
+	"Button label");
+static const BString kLabelRemoveAll = B_TRANSLATE_COMMENT("Remove All",
+	"Button label");
+static const BString kLabelEnable = B_TRANSLATE_COMMENT("Enable",
+	"Button label");
+static const BString kLabelEnableAll = B_TRANSLATE_COMMENT("Enable All",
+	"Button label");
+static const BString kLabelDisable = B_TRANSLATE_COMMENT("Disable",
+	"Button label");
+static const BString kLabelDisableAll = B_TRANSLATE_COMMENT("Disable All",
+	"Button label");
+static const BString kStatusViewText = B_TRANSLATE_COMMENT("Changes pending:",
+	"Status view text");
+static const BString kStatusCompletedText = B_TRANSLATE_COMMENT("Changes completed",
+	"Status view text");
 
 
 DepotsView::DepotsView()
@@ -47,8 +59,8 @@ DepotsView::DepotsView()
 	float col0width = be_plain_font->StringWidth(kTitleEnabled) + 15;
 	float col1width = be_plain_font->StringWidth(kTitleName) + 15;
 	float col2width = be_plain_font->StringWidth(kTitleUrl) + 15;
-	fListView->AddColumn(new BStringColumn(kTitleEnabled, col0width, col0width, col0width,
-		B_TRUNCATE_END, B_ALIGN_CENTER), kEnabledColumn);
+	fListView->AddColumn(new BStringColumn(kTitleEnabled, col0width, col0width,
+		col0width, B_TRUNCATE_END, B_ALIGN_CENTER), kEnabledColumn);
 	fListView->AddColumn(new BStringColumn(kTitleName, 90, col1width, 300,
 		B_TRUNCATE_END), kNameColumn);
 	fListView->AddColumn(new BStringColumn(kTitleUrl, 500, col2width, 5000,
@@ -61,11 +73,13 @@ DepotsView::DepotsView()
 	templateText.Append(" 88");
 		// Simulate a status text with two digit queue count
 	fListStatusView = new BStringView("status", templateText);
+	
 	// Set a smaller fixed font size and slightly lighten text color
 	BFont font(be_plain_font);
 	font.SetSize(10.0f);
 	fListStatusView->SetFont(&font, B_FONT_SIZE);
 	fListStatusView->SetHighUIColor(fListStatusView->HighUIColor(), .9f);
+	
 	// Set appropriate explicit view sizes
 	float viewWidth = max_c(fListStatusView->StringWidth(templateText),
 		fListStatusView->StringWidth(kStatusCompletedText));
@@ -87,13 +101,15 @@ DepotsView::DepotsView()
 	fListView->AddStatusView(statusContainerView);
 	
 	// Standard buttons
-	fEnableButton = new BButton(kLabelEnable, new BMessage(ENABLE_BUTTON_PRESSED));
-	fDisableButton = new BButton(kLabelDisable, new BMessage(DISABLE_BUTTON_PRESSED));
+	fEnableButton = new BButton(kLabelEnable,
+		new BMessage(ENABLE_BUTTON_PRESSED));
+	fDisableButton = new BButton(kLabelDisable, 
+		new BMessage(DISABLE_BUTTON_PRESSED));
 	
 	// Create buttons with fixed size
 	font_height fontHeight;
 	GetFontHeight(&fontHeight);
-	int buttonHeight = int(fontHeight.ascent + fontHeight.descent + 12);
+	int16 buttonHeight = int16(fontHeight.ascent + fontHeight.descent + 12);
 		// button size determined by font size
 	BSize btnSize(buttonHeight,buttonHeight);
 	
@@ -105,11 +121,14 @@ DepotsView::DepotsView()
 	fAboutButton->SetExplicitSize(btnSize);
 	
 	// Layout
-	int buttonSpacing = 1;
+	int16 buttonSpacing = 1;
 	BLayoutBuilder::Group<>(this, B_VERTICAL, 0)
-		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
+		.SetInsets(B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING,
+			B_USE_WINDOW_SPACING, B_USE_WINDOW_SPACING)
 		.AddGroup(B_HORIZONTAL, 0, 0.0)
-			.Add(new BStringView("instruction", B_TRANSLATE_COMMENT("Select depots to use with Haiku package management:", "Label text")), 0.0)
+			.Add(new BStringView("instruction",
+				B_TRANSLATE_COMMENT("Select depots to use with Haiku package "\
+					"management:", "Label text")), 0.0)
 			.AddGlue()
 			.Add(fAboutButton, 0.0)
 		.End()
@@ -134,7 +153,8 @@ DepotsView::DepotsView()
 			.End()
 			// Enable and Disable buttons
 			.AddGroup(B_HORIZONTAL)
-				.SetInsets(B_USE_DEFAULT_SPACING,B_USE_DEFAULT_SPACING,B_USE_DEFAULT_SPACING,0)
+				.SetInsets(B_USE_DEFAULT_SPACING, B_USE_DEFAULT_SPACING,
+					B_USE_DEFAULT_SPACING, 0)
 				.AddGlue()
 				.Add(fEnableButton)
 				.Add(fDisableButton)
@@ -145,8 +165,7 @@ DepotsView::DepotsView()
 
 DepotsView::~DepotsView()
 {
-	if(fTaskLooper)
-	{
+	if(fTaskLooper) {
 		fTaskLooper->Lock();
 		fTaskLooper->Quit();
 	}
@@ -178,9 +197,9 @@ DepotsView::AttachedToWindow()
 
 
 void
-DepotsView::MessageReceived(BMessage* msg)
+DepotsView::MessageReceived(BMessage* message)
 {
-	switch(msg->what)
+	switch(message->what)
 	{
 		case REMOVE_REPOS :{
 			RepoRow *rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
@@ -215,15 +234,19 @@ DepotsView::MessageReceived(BMessage* msg)
 		case ENABLE_BUTTON_PRESSED: {
 			BStringList names;
 			bool paramsOK = true;
-			// Check if there are multiple selections of the same depot, pkgman won't like that
+			// Check if there are multiple selections of the same depot,
+			// pkgman won't like that
 			RepoRow* rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
 			while(rowItem)
 			{
-				if(names.HasString(rowItem->Name()) && kNewRepoDefaultName.Compare(rowItem->Name()) != 0)
-				{
-					(new BAlert("duplicate", B_TRANSLATE_COMMENT("Only one URL for each depot can be enabled."
-									"  Please change your selections.", "Error message"), kOKLabel, NULL, NULL,
-									B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
+				if(names.HasString(rowItem->Name())
+					&& kNewRepoDefaultName.Compare(rowItem->Name()) != 0) {
+					(new BAlert("duplicate",
+						B_TRANSLATE_COMMENT("Only one URL for each depot can "
+							"be enabled.  Please change your selections.",
+							"Error message"),
+						kOKLabel, NULL, NULL,
+						B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
 					paramsOK = false;
 					break;
 				}
@@ -231,8 +254,7 @@ DepotsView::MessageReceived(BMessage* msg)
 					names.Add(rowItem->Name());
 				rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection(rowItem));
 			}
-			if(paramsOK)
-			{
+			if(paramsOK) {
 				_AddSelectedRowsToQueue();
 				_UpdateButtons();
 			}
@@ -245,31 +267,35 @@ DepotsView::MessageReceived(BMessage* msg)
 		}
 		case TASK_STARTED: {
 			int16 count;
-			status_t result1 = msg->FindInt16(key_count, &count);
+			status_t result1 = message->FindInt16(key_count, &count);
 			RepoRow *rowItem;
-			status_t result2 = msg->FindPointer(key_rowptr, (void**)&rowItem);
+			status_t result2 = message->FindPointer(key_rowptr, (void**)&rowItem);
 			if(result1 == B_OK && result2 == B_OK)
 				_TaskStarted(rowItem, count);
 			break;
 		}
 		case TASK_COMPLETE_WITH_ERRORS: {
 			BString errorDetails;
-			status_t result = msg->FindString(key_details, &errorDetails);
-			if(result == B_OK)
-			{// TODO seperate details view?
-				(new BAlert("error", errorDetails, kOKLabel, NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
+			status_t result = message->FindString(key_details, &errorDetails);
+			if(result == B_OK) {
+				// TODO seperate details view?
+				(new BAlert("error", errorDetails, kOKLabel, NULL, NULL,
+					B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
 			}
 			// Fall through
 		}
 		case TASK_COMPLETE: {
-			BString repoName = msg->GetString(key_name, kNewRepoDefaultName.String());
+			BString repoName = message->GetString(key_name,
+				kNewRepoDefaultName.String());
 			int16 count;
-			status_t result1 = msg->FindInt16(key_count, &count);
+			status_t result1 = message->FindInt16(key_count, &count);
 			RepoRow *rowItem;
-			status_t result2 = msg->FindPointer(key_rowptr, (void**)&rowItem);
+			status_t result2 = message->FindPointer(key_rowptr, (void**)&rowItem);
 			if(result1 == B_OK && result2 == B_OK)
-				_TaskCompleted(rowItem, count, msg->what==TASK_COMPLETE, repoName);
-			// If a repo was enabled, it is possible a repo on the same server was disabled- need to refresh all
+				_TaskCompleted(rowItem, count, message->what==TASK_COMPLETE,
+					repoName);
+			// If a repo was enabled, it is possible a repo on the same server
+			// was disabled- need to refresh all
 			_UpdatePkgmanList(true);
 			_UpdateButtons();
 			break;
@@ -277,14 +303,14 @@ DepotsView::MessageReceived(BMessage* msg)
 		case TASK_CANCELED: {
 		//	(new BAlert("timeout", "Task canceled.", "OK"))->Go(NULL);
 			int16 count;
-			status_t result1 = msg->FindInt16(key_count, &count);
+			status_t result1 = message->FindInt16(key_count, &count);
 			RepoRow *rowItem;
-			status_t result2 = msg->FindPointer(key_rowptr, (void**)&rowItem);
+			status_t result2 = message->FindPointer(key_rowptr, (void**)&rowItem);
 			if(result1 == B_OK && result2 == B_OK)
 			{
 				_TaskCanceled(rowItem, count);
 			}
-			// Update the list since it is unsure what the final status of the depot is
+			// Update the list since it is unsure what the final status is
 			_UpdatePkgmanList(true);
 			_UpdateButtons();
 			break;
@@ -296,13 +322,13 @@ DepotsView::MessageReceived(BMessage* msg)
 		}
 		case STATUS_VIEW_COMPLETED_TIMEOUT: {
 			int32 timerID;
-			status_t result = msg->FindInt32(key_ID, &timerID);
+			status_t result = message->FindInt32(key_ID, &timerID);
 			if(result == B_OK && timerID == fLastCompletedTimerId)
 				_UpdateStatusView();
 			break;
 		}
 		default:
-			BView::MessageReceived(msg);
+			BView::MessageReceived(message);
 	}
 }
 
@@ -314,9 +340,9 @@ DepotsView::_AddSelectedRowsToQueue()
 	while(rowItem)
 	{
 		rowItem->SetTaskState(STATE_IN_QUEUE_WAITING);
-		BMessage taskMsg(DO_TASK);
-		taskMsg.AddPointer(key_rowptr, rowItem);
-		fTaskLooper->PostMessage(&taskMsg);
+		BMessage taskMessage(DO_TASK);
+		taskMessage.AddPointer(key_rowptr, rowItem);
+		fTaskLooper->PostMessage(&taskMessage);
 		rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection(rowItem));
 	}
 }
@@ -337,7 +363,8 @@ DepotsView::_TaskStarted(RepoRow *rowItem, int16 count)
 
 
 void
-DepotsView::_TaskCompleted(RepoRow *rowItem, int16 count, bool noErrors, BString& newName)
+DepotsView::_TaskCompleted(RepoRow *rowItem, int16 count, bool noErrors,
+	BString& newName)
 {
 	fRunningTaskCount = count;
 	// If this is the last task show completed status text for 3 seconds
@@ -345,9 +372,9 @@ DepotsView::_TaskCompleted(RepoRow *rowItem, int16 count, bool noErrors, BString
 	{
 		fListStatusView->SetText(kStatusCompletedText);
 		fLastCompletedTimerId = rand();
-		BMessage timerMsg(STATUS_VIEW_COMPLETED_TIMEOUT);
-		timerMsg.AddInt32(key_ID, fLastCompletedTimerId);
-		new BMessageRunner(this, &timerMsg, 3000000, 1);
+		BMessage timerMessage(STATUS_VIEW_COMPLETED_TIMEOUT);
+		timerMessage.AddInt32(key_ID, fLastCompletedTimerId);
+		new BMessageRunner(this, &timerMessage, 3000000, 1);
 		fShowCompletedStatus = false;
 	}
 	else
@@ -360,7 +387,8 @@ DepotsView::_TaskCompleted(RepoRow *rowItem, int16 count, bool noErrors, BString
 	else
 		rowItem->RefreshEnabledField();
 	// Update a new repository name
-	if(kNewRepoDefaultName.Compare(rowItem->Name()) == 0 && newName.Compare("") != 0)
+	if(kNewRepoDefaultName.Compare(rowItem->Name()) == 0
+		&& newName.Compare("") != 0)
 		rowItem->SetName(newName.String());
 }
 
@@ -374,9 +402,9 @@ DepotsView::_TaskCanceled(RepoRow *rowItem, int16 count)
 	{
 		fListStatusView->SetText(kStatusCompletedText);
 		fLastCompletedTimerId = rand();
-		BMessage timerMsg(STATUS_VIEW_COMPLETED_TIMEOUT);
-		timerMsg.AddInt32(key_ID, fLastCompletedTimerId);
-		new BMessageRunner(this, &timerMsg, 3000000, 1);
+		BMessage timerMessage(STATUS_VIEW_COMPLETED_TIMEOUT);
+		timerMessage.AddInt32(key_ID, fLastCompletedTimerId);
+		new BMessageRunner(this, &timerMessage, 3000000, 1);
 		fShowCompletedStatus = false;
 	}
 	else
@@ -401,12 +429,15 @@ DepotsView::AddManualRepository(BString url)
 		const char *urlPtr = repoItem->Url();
 		if(url.ICompare(urlPtr) == 0)
 		{
-			(new BAlert("duplicate", B_TRANSLATE_COMMENT("This depot URL already exists.", "Error message"), kOKLabel))->Go(NULL);
+			(new BAlert("duplicate",
+				B_TRANSLATE_COMMENT("This depot URL already exists.",
+					"Error message"),
+				kOKLabel))->Go(NULL);
 			return; 
 		}
 		//Find same root url
-		if(foundRoot == false && rootUrl.Compare(urlPtr, rootUrl.Length()) == 0)
-		{
+		if(foundRoot == false && rootUrl.Compare(urlPtr,
+			rootUrl.Length()) == 0) {
 			foundRoot = true;
 			name = repoItem->Name();
 		}
@@ -493,17 +524,16 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 	BStringList repositoryNames;
 	BPackageKit::BPackageRoster pRoster;
 	status_t result = pRoster.GetRepositoryNames(repositoryNames);
-	if(result != B_OK)
-	{
-		(new BAlert("error", B_TRANSLATE_COMMENT("Depots could not retrieve the names of the currently enabled depots.",
-								"Alert error message"),
-								"OK", NULL, NULL, B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go(NULL);
+	if(result != B_OK) {
+		(new BAlert("error",
+			B_TRANSLATE_COMMENT("Depots could not retrieve the names of the "
+				"currently enabled depots.", "Alert error message"),
+			"OK", NULL, NULL, B_WIDTH_AS_USUAL, B_WARNING_ALERT))->Go(NULL);
 		return;
 	}
 	BPackageKit::BRepositoryConfig repoConfig;
-	int index, count = repositoryNames.CountStrings();
-	for(index=0; index < count; index++)
-	{
+	int16 index, count = repositoryNames.CountStrings();
+	for(index=0; index < count; index++) {
 		const BString& repoName = repositoryNames.StringAt(index);
 		result = pRoster.GetRepositoryConfig(repoName, &repoConfig);
 		if(result == B_OK)
@@ -518,8 +548,7 @@ DepotsView::_SaveList()
 	BStringList nameList, urlList;
 	int32 index;
 	int32 listCount = fListView->CountRows();
-	for(index=0; index < listCount; index++)
-	{
+	for(index=0; index < listCount; index++) {
 		RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
 		nameList.Add(repoItem->Name());
 		urlList.Add(repoItem->Url());
@@ -538,11 +567,9 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 	int32 index;
 	int32 listCount = fListView->CountRows();
 	// Find if the repo already exists in list
-	for(index=0; index < listCount; index++)
-	{
+	for(index=0; index < listCount; index++) {
 		RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
-		if(url.ICompare(repoItem->Url()) == 0)
-		{
+		if(url.ICompare(repoItem->Url()) == 0) {
 			// update name and enabled values
 			if(name.Compare(repoItem->Name()) != 0)
 				repoItem->SetName(name.String());
@@ -550,8 +577,7 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 			addedRow = repoItem;
 		}
 	}
-	if(addedRow == NULL)
-	{
+	if(addedRow == NULL) {
 		addedRow = new RepoRow(name, url, enabled);
 		fListView->AddRow(addedRow);
 	}
@@ -564,13 +590,13 @@ DepotsView::_UpdateButtons()
 {
 	RepoRow *rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
 	// At least one row is selected
-	if(rowItem)
-	{
-		bool someAreEnabled = false, someAreDisabled = false, someAreInQueue = false;
+	if(rowItem) {
+		bool someAreEnabled = false,
+			someAreDisabled = false,
+			someAreInQueue = false;
 		int32 selectedCount=0;
 		RepoRow *rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
-		while(rowItem)
-		{
+		while(rowItem) {
 			selectedCount++;
 			switch(rowItem->TaskState())
 			{
@@ -587,34 +613,29 @@ DepotsView::_UpdateButtons()
 			rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection(rowItem));
 		}
 		// Change button labels depending on which rows are selected
-		if(selectedCount>1)
-		{
+		if(selectedCount>1) {
 			fEnableButton->SetLabel(kLabelEnableAll);
 			fDisableButton->SetLabel(kLabelDisableAll);
 		}
-		else
-		{
+		else {
 			fEnableButton->SetLabel(kLabelEnable);
 			fDisableButton->SetLabel(kLabelDisable);
 		}
 		// Set which buttons should be enabled
 		fRemoveButton->SetEnabled(!someAreEnabled && !someAreInQueue);
-		if((someAreEnabled && someAreDisabled) || someAreInQueue)
-		{
+		if((someAreEnabled && someAreDisabled) || someAreInQueue) {
 			// there are a mix of enabled and disabled depots selected
 			fEnableButton->SetEnabled(false);
 			fDisableButton->SetEnabled(false);	
 		}
-		else
-		{
+		else {
 			fEnableButton->SetEnabled(someAreDisabled);
 			fDisableButton->SetEnabled(someAreEnabled);
 		}
 		
 	}
 	// No selected rows
-	else
-	{
+	else {
 		fEnableButton->SetLabel(kLabelEnable);
 		fDisableButton->SetLabel(kLabelDisable);
 		fEnableButton->SetEnabled(false);
@@ -627,8 +648,7 @@ DepotsView::_UpdateButtons()
 void
 DepotsView::_UpdateStatusView()
 {
-	if(fRunningTaskCount)
-	{
+	if(fRunningTaskCount) {
 		BString text(kStatusViewText);
 		text.Append(" ");
 		text<<fRunningTaskCount;

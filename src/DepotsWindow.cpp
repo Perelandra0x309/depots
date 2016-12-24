@@ -2,6 +2,10 @@
  * Copyright 2016 Brian Hill
  * All rights reserved. Distributed under the terms of the BSD License.
  */
+
+
+#include "DepotsWindow.h"
+
 #include <Alert.h>
 #include <Application.h>
 #include <Catalog.h>
@@ -13,7 +17,6 @@
 
 #include "AddRepoWindow.h"
 #include "constants.h"
-#include "DepotsWindow.h"
 
 
 #undef B_TRANSLATION_CONTEXT
@@ -22,8 +25,8 @@
 
 DepotsWindow::DepotsWindow()
 	:
-	BWindow(BRect(50,50,500,400), B_TRANSLATE_SYSTEM_NAME("Depots"), B_TITLED_WINDOW,
-					B_NOT_ZOOMABLE | B_ASYNCHRONOUS_CONTROLS),
+	BWindow(BRect(50,50,500,400), B_TRANSLATE_SYSTEM_NAME("Depots"),
+		B_TITLED_WINDOW, B_NOT_ZOOMABLE | B_ASYNCHRONOUS_CONTROLS),
 	fPackageNodeStatus(B_ERROR),
 	fAddWindow(NULL)
 {
@@ -47,19 +50,17 @@ DepotsWindow::DepotsWindow()
 	// Find the pkgman settings or cache directory
 	BPath packagePath;
 	// /boot/system/settings/package-repositories
-	status_t status = find_directory(B_SYSTEM_SETTINGS_DIRECTORY, &packagePath);
-	if (status == B_OK) {
+	status_t status = find_directory(B_SYSTEM_SETTINGS_DIRECTORY,
+		&packagePath);
+	if (status == B_OK)
 		status = packagePath.Append("package-repositories");
-	}
-	else
-	{
+	else {
 		// /boot/system/cache/package-repositories
 		status = find_directory(B_SYSTEM_CACHE_DIRECTORY, &packagePath);
 		if (status == B_OK)
 			status = packagePath.Append("package-repositories");
 	}
-	if (status == B_OK)
-	{
+	if (status == B_OK) {
 		BNode packageNode(packagePath.Path());
 		if(packageNode.InitCheck()==B_OK && packageNode.IsDirectory())
 			fPackageNodeStatus = packageNode.GetNodeRef(&fPackageNodeRef);
@@ -79,8 +80,7 @@ DepotsWindow::~DepotsWindow()
 void
 DepotsWindow::_StartWatching()
 {
-	if(fPackageNodeStatus == B_OK)
-	{
+	if(fPackageNodeStatus == B_OK) {
 		status_t result = watch_node(&fPackageNodeRef, B_WATCH_DIRECTORY, this);
 		fWatchingPackageNode = (result==B_OK);
 	}
@@ -90,8 +90,7 @@ DepotsWindow::_StartWatching()
 void
 DepotsWindow::_StopWatching()
 {
-	if(fPackageNodeStatus == B_OK && fWatchingPackageNode)// package-repositories directory is being watched
-	{	
+	if(fPackageNodeStatus == B_OK && fWatchingPackageNode) {	
 		watch_node(&fPackageNodeRef, B_STOP_WATCHING, this);
 		fWatchingPackageNode = false;
 	}
@@ -101,11 +100,11 @@ DepotsWindow::_StopWatching()
 bool
 DepotsWindow::QuitRequested()
 {
-	if(fView->IsTaskRunning())
-	{
-		int32 result = (new BAlert("tasks", B_TRANSLATE_COMMENT("Some tasks are still running. Stop these tasks "
-										"and quit?", "Alert message"), "No", "Yes", NULL,
-										B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
+	if(fView->IsTaskRunning()) {
+		int32 result = (new BAlert("tasks",
+			B_TRANSLATE_COMMENT("Some tasks are still running. Stop these "
+				"tasks and quit?", "Alert message"),
+			"No", "Yes", NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
 		if(result == 0)
 			return false;
 	}
@@ -116,9 +115,9 @@ DepotsWindow::QuitRequested()
 
 
 void
-DepotsWindow::MessageReceived(BMessage* msg)
+DepotsWindow::MessageReceived(BMessage* message)
 {
-	switch(msg->what)
+	switch(message->what)
 	{
 		case ADD_REPO_WINDOW: {
 			BRect frame = Frame();
@@ -128,7 +127,7 @@ DepotsWindow::MessageReceived(BMessage* msg)
 		}
 		case ADD_REPO_URL: {
 			BString url;
-			status_t result = msg->FindString(key_url, &url);
+			status_t result = message->FindString(key_url, &url);
 			if(result == B_OK)
 				fView->AddManualRepository(url);
 			break;
@@ -141,22 +140,24 @@ DepotsWindow::MessageReceived(BMessage* msg)
 		case TASK_COMPLETE_WITH_ERRORS:
 		case TASK_COMPLETE:
 		case TASK_CANCELED: {
-			fView->MessageReceived(msg);
+			fView->MessageReceived(message);
 			break;
 		}
 		case SHOW_ABOUT: {
 			be_app->AboutRequested();
 			break;
 		}
-		case B_NODE_MONITOR: { // captures pkgman changes while Depots application is running
-			// This app is making changes, so ignore this message
+		// captures pkgman changes while the Depots application is running
+		case B_NODE_MONITOR: {
+			// This preflet is making the changes, so ignore this message
 			if(fView->IsTaskRunning())
 				break;
 			
 			int32 opcode;
-			if (msg->FindInt32("opcode", &opcode) == B_OK)
-			{	switch (opcode)
-				{	case B_ATTR_CHANGED:
+			if (message->FindInt32("opcode", &opcode) == B_OK) {
+				switch (opcode)
+				{
+					case B_ATTR_CHANGED:
 					case B_ENTRY_CREATED:
 					case B_ENTRY_REMOVED: {
 						PostMessage(UPDATE_LIST, fView);
@@ -167,7 +168,7 @@ DepotsWindow::MessageReceived(BMessage* msg)
 			break;
 		}
 		default:
-			BWindow::MessageReceived(msg);
+			BWindow::MessageReceived(message);
 	}
 }
 
@@ -175,10 +176,10 @@ DepotsWindow::MessageReceived(BMessage* msg)
 void
 DepotsWindow::FrameMoved(BPoint newPosition)
 {
-	if(fAddWindow)
-	{
+	if(fAddWindow) {
 		BRect frame = Frame();
-	//	fAddWindow->MoveTo(frame.left, frame.bottom - fAddWindow->Frame().Height());
+	//	fAddWindow->MoveTo(frame.left,
+	//		frame.bottom - fAddWindow->Frame().Height());
 		fAddWindow->CenterIn(frame);
 	}
 }
@@ -187,11 +188,11 @@ DepotsWindow::FrameMoved(BPoint newPosition)
 void
 DepotsWindow::FrameResized(float newWidth, float newHeight)
 {
-	if(fAddWindow)
-	{
+	if(fAddWindow) {
 		BRect frame = Frame();
 		fAddWindow->SetWidth(frame.Width() - 2*kAddWindowOffset);
-	//	fAddWindow->MoveTo(frame.left, frame.bottom - fAddWindow->Frame().Height());
+	//	fAddWindow->MoveTo(frame.left,
+	//		frame.bottom - fAddWindow->Frame().Height());
 		fAddWindow->CenterIn(frame);
 	}
 }

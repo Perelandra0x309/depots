@@ -5,6 +5,7 @@
 #ifndef REPO_ROW_H
 #define REPO_ROW_H
 
+
 #include <ColumnListView.h>
 #include <String.h>
 
@@ -28,6 +29,7 @@ public:
 			bool				IsEnabled() { return fEnabled; }
 			void				SetTaskState(uint32 state);
 			uint32				TaskState() { return fTaskState; }
+
 private:
 			BString				fName;
 			BString				fUrl;

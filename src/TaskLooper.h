@@ -5,6 +5,7 @@
 #ifndef TASK_LOOPER_H
 #define TASK_LOOPER_H
 
+
 #include <Job.h>
 #include <Looper.h>
 #include <ObjectList.h>
@@ -20,9 +21,11 @@ public:
 								DecisionProvider(){}
 
 	virtual	bool				YesNoDecisionNeeded(const BString& description,
-									const BString& question, const BString& yes,
+									const BString& question,
+									const BString& yes,
 									const BString& no,
-									 const BString& defaultChoice) { return true; }
+									const BString& defaultChoice)
+									{ return true; }
 };
 
 
@@ -51,7 +54,8 @@ private:
 	BObjectList<Task>		fTaskQueue;
 	void					_RemoveAndDelete(Task *task);
 	static status_t			_DoTask(void *data);
-	static void				_AppendErrorDetails(BString &details, JobStateListener *listener);
+	static void				_AppendErrorDetails(BString &details,
+								JobStateListener *listener);
 	BLooper					*fReplyTarget;
 };
 

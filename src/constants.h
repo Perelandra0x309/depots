@@ -5,6 +5,7 @@
 #ifndef DEPOTS_CONSTANTS_H
 #define DEPOTS_CONSTANTS_H
 
+
 #include <Catalog.h>
 #include <String.h>
 
@@ -12,13 +13,15 @@
 #define B_TRANSLATION_CONTEXT "Constants"
 
 static const float kAddWindowOffset = 10.0;
-static const int kTimerAlertOffset = 15;
-static const int kTimerTimeoutSeconds = 10;
+static const int16 kTimerAlertOffset = 15;
+static const int16 kTimerTimeoutSeconds = 10;
 
 static const BString kOKLabel = B_TRANSLATE_COMMENT("OK", "Button label");
-static const BString kCancelLabel = B_TRANSLATE_COMMENT("Cancel", "Button label");
+static const BString kCancelLabel = B_TRANSLATE_COMMENT("Cancel",
+	"Button label");
 static const BString kWebsiteUrl = "http://perelandra0x309.github.io/depots";
-static const BString kNewRepoDefaultName = B_TRANSLATE_COMMENT("Unknown", "Unknown depot name");
+static const BString kNewRepoDefaultName = B_TRANSLATE_COMMENT("Unknown",
+	"Unknown depot name");
 
 typedef struct {
 	const char* name;
@@ -26,8 +29,10 @@ typedef struct {
 } Repository;
 
 static const Repository kDefaultRepos[] = {
-	{ "Haiku", "http://packages.haiku-os.org/haiku/master/"B_HAIKU_ABI_NAME"/current"},
-	{ "Haikuports", "http://packages.haiku-os.org/haikuports/master/repo/"B_HAIKU_ABI_NAME"/current" },
+	{ "Haiku", "http://packages.haiku-os.org/haiku/master/"B_HAIKU_ABI_NAME
+		"/current"},
+	{ "Haikuports", "http://packages.haiku-os.org/haikuports/master/repo/"
+		B_HAIKU_ABI_NAME"/current" },
 	{ "BeSly Software Solutions", "http://software.besly.de/repo"},
 	{ "clasqm's repo", "http://clasquin-johnson.co.za/michel/repo"},
 	{ "FatElk", "http://coquillemartialarts.com/fatelk/repo"}
