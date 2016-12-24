@@ -224,7 +224,7 @@ status_t
 TaskLooper::_DoTask(void *data)
 {
 	// TODO debug
-	sleep(10);
+//	sleep(10);
 	
 	Task *task = (Task*)data;
 	BString errorDetails, repoName("");

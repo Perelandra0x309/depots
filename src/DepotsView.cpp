@@ -6,6 +6,7 @@
 
 #include "DepotsView.h"
 
+#include <stdlib.h>
 #include <Alert.h>
 #include <Button.h>
 #include <Catalog.h>

@@ -28,7 +28,7 @@ TaskTimer::TaskTimer(BLooper *target, Task *owner)
 {
 	Run();
 	
-	fTimeoutMicroSeconds = 1000000;//TODO remove debug code
+//	fTimeoutMicroSeconds = 1000000;//TODO remove debug code
 	// Messenger for the Message Runner to use to send its message to the timer
 	fMessenger.SetTo(this);
 	// Invoker for the Alerts to use to send their messages to the timer
