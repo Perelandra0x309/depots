@@ -49,7 +49,7 @@ AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 	
 	// Move to bottom of window
 	Layout(true);
-	SetWidth(size.Width() - 2*kAddWindowOffset);
+	ResizeTo(500, Frame().Height());
 //	MoveTo(size.left, size.bottom - Frame().Height());
 	CenterIn(size);
 	Show();
@@ -67,9 +67,9 @@ AddRepoWindow::Quit()
 void
 AddRepoWindow::SetWidth(float width)
 {
-	Lock();
-	fView->SetExplicitSize(BSize(width, B_SIZE_UNSET));
-	Unlock();
+//	Lock();
+//	fView->SetExplicitSize(BSize(width, B_SIZE_UNSET));
+//	Unlock();
 }
 
 
