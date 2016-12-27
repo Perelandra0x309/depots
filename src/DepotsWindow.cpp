@@ -171,28 +171,3 @@ DepotsWindow::MessageReceived(BMessage* message)
 			BWindow::MessageReceived(message);
 	}
 }
-
-
-void
-DepotsWindow::FrameMoved(BPoint newPosition)
-{
-/*	if(fAddWindow) {
-		BRect frame = Frame();
-	//	fAddWindow->MoveTo(frame.left,
-	//		frame.bottom - fAddWindow->Frame().Height());
-		fAddWindow->CenterIn(frame);
-	}*/
-}
-
-
-void
-DepotsWindow::FrameResized(float newWidth, float newHeight)
-{
-/*	if(fAddWindow) {
-		BRect frame = Frame();
-		fAddWindow->SetWidth(frame.Width() - 2*kAddWindowOffset);
-	//	fAddWindow->MoveTo(frame.left,
-	//		frame.bottom - fAddWindow->Frame().Height());
-		fAddWindow->CenterIn(frame);
-	}*/
-}

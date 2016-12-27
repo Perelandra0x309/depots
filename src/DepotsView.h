@@ -29,6 +29,7 @@ public:
 private:
 	DepotsSettings			fSettings;
 	BColumnListView			*fListView;
+	BView					*fStatusContainerView;
 	BStringView				*fListStatusView;
 	TaskLooper				*fTaskLooper;
 	bool					fShowCompletedStatus;

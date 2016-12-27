@@ -12,11 +12,14 @@
 #include <Window.h>
 
 
+static float sAddWindowWidth = 500.0;
+
 class AddRepoWindow : public BWindow {
 public:
 							AddRepoWindow(BRect size, BLooper *looper);
 	virtual void			MessageReceived(BMessage*);
 	virtual void			Quit();
+	virtual void			FrameResized(float newWidth, float newHeight);
 
 private:
 	BView					*fView;

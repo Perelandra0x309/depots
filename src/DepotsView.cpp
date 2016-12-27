@@ -69,7 +69,7 @@ DepotsView::DepotsView()
 	fListView->SetInvocationMessage(new BMessage(ITEM_INVOKED));
 	
 	// Depot list status view
-	BView *statusContainerView = new BView("status", B_SUPPORTS_LAYOUT);
+	fStatusContainerView = new BView("status", B_SUPPORTS_LAYOUT);
 	BString templateText(kStatusViewText);
 	templateText.Append(" 88");
 		// Simulate a status text with two digit queue count
@@ -87,8 +87,8 @@ DepotsView::DepotsView()
 	BSize statusViewSize(viewWidth + 3, B_H_SCROLL_BAR_HEIGHT - 2);
 	fListStatusView->SetExplicitSize(statusViewSize);
 	statusViewSize.height += 1;
-	statusContainerView->SetExplicitSize(statusViewSize);
-	BLayoutBuilder::Group<>(statusContainerView, B_HORIZONTAL, 0)
+	fStatusContainerView->SetExplicitSize(statusViewSize);
+	BLayoutBuilder::Group<>(fStatusContainerView, B_HORIZONTAL, 0)
 		.Add(new BSeparatorView(B_VERTICAL))
 		.AddGroup(B_VERTICAL, 0)
 			.AddGlue()
@@ -99,7 +99,7 @@ DepotsView::DepotsView()
 			.End()
 			.Add(new BSeparatorView(B_HORIZONTAL))
 		.End();
-	fListView->AddStatusView(statusContainerView);
+	fListView->AddStatusView(fStatusContainerView);
 	
 	// Standard buttons
 	fEnableButton = new BButton(kLabelEnable,

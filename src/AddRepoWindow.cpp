@@ -19,7 +19,7 @@
 
 AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 	:
-	BWindow(BRect(0,0,kAddWindowWidth,10), "AddWindow", B_MODAL_WINDOW,
+	BWindow(BRect(0,0,sAddWindowWidth,10), "AddWindow", B_MODAL_WINDOW,
 		B_ASYNCHRONOUS_CONTROLS	| B_AUTO_UPDATE_SIZE_LIMITS | B_CLOSE_ON_ESCAPE),
 	fReplyLooper(looper)
 {
@@ -99,4 +99,11 @@ AddRepoWindow::MessageReceived(BMessage* message)
 		default:
 			BWindow::MessageReceived(message);
 	}
+}
+
+
+void
+AddRepoWindow::FrameResized(float newWidth, float newHeight)
+{
+	sAddWindowWidth = newWidth;
 }

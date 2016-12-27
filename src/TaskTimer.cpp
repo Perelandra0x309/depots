@@ -104,9 +104,9 @@ TaskTimer::MessageReceived(BMessage *message)
 					fReplyTarget->PostMessage(&reply);
 				}
 				else if(selection == 0) {
-					// Create new timer for 30 seconds
+					// Create new timer
 					fMessageRunner = new BMessageRunner(fMessenger,
-						&fTimeoutMessage, 30000000, 1);
+						&fTimeoutMessage, kTimerRetrySeconds*1000000, 1);
 				}
 			}
 			break;

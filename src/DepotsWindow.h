@@ -20,8 +20,6 @@ public:
 							~DepotsWindow();
 	virtual	bool			QuitRequested();
 	virtual void			MessageReceived(BMessage*);
-	virtual void			FrameMoved(BPoint newPosition);
-	virtual void			FrameResized(float newWidth, float newHeight);
 
 private:
 	DepotsSettings			fSettings;
