@@ -9,6 +9,7 @@
 #include <Alert.h>
 #include <Application.h>
 #include <Catalog.h>
+#include <Clipboard.h>
 #include <LayoutBuilder.h>
 
 #include "constants.h"
@@ -42,6 +43,7 @@ AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 			.Add(fAddButton);
 	BLayoutBuilder::Group<>(this, B_VERTICAL)
 		.Add(fView);
+	_GetClipboardData();
 	fText->MakeFocus();
 	
 	// Move to the center of the preflet window
@@ -106,4 +108,27 @@ void
 AddRepoWindow::FrameResized(float newWidth, float newHeight)
 {
 	sAddWindowWidth = newWidth;
+}
+
+
+status_t
+AddRepoWindow::_GetClipboardData()
+{
+	if (be_clipboard->Lock()) {
+		const char *string;
+		int32 stringLen;
+	    BMessage *clip = be_clipboard->Data();
+	    clip->FindData("text/plain", B_MIME_TYPE, (const void **)&string,
+	        &stringLen);
+	    be_clipboard->Unlock();
+	    
+	    // The string must contain a web protocol
+	    BString clipString(string, stringLen);
+		int32 ww = clipString.FindFirst("://");
+		if(ww == B_ERROR)
+			return B_ERROR;
+		else
+			fText->SetText(clipString);
+	}
+	return B_OK;
 }

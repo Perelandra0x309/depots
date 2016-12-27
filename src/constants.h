@@ -36,6 +36,7 @@ static const Repository kDefaultRepos[] = {
 		B_HAIKU_ABI_NAME"/current" },
 	{ "BeSly Software Solutions", "http://software.besly.de/repo"},
 	{ "clasqm's repo", "http://clasquin-johnson.co.za/michel/repo"},
+	{ "clasqm's x86_64 repo", "http://clasquin-johnson.co.za/michel/repo_64"},
 	{ "FatElk", "http://coquillemartialarts.com/fatelk/repo"}
 };
 

@@ -26,6 +26,7 @@ private:
 	BTextControl			*fText;
 	BButton					*fAddButton, *fCancelButton;
 	BLooper					*fReplyLooper;
+	status_t				_GetClipboardData();
 };
 
 #endif
