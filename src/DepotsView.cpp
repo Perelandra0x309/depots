@@ -204,6 +204,37 @@ DepotsView::MessageReceived(BMessage* message)
 	{
 		case REMOVE_REPOS :{
 			RepoRow *rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
+			if(!rowItem)
+				break;
+			
+			BString text;
+			// More than one selected row
+			if(fListView->CurrentSelection(rowItem)) {
+				text.SetTo(B_TRANSLATE_COMMENT("Remove these depots?",
+					"Removal alert confirmation message"));
+				text.Append("\n");
+			}
+			// Only one selected row
+			else {
+				text.SetTo(B_TRANSLATE_COMMENT("Remove this depot?",
+					"Removal alert confirmation message"));
+				text.Append("\n");
+			}
+			while(rowItem)
+			{
+				text.Append("\n").Append(rowItem->Url())
+					.Append(" (").Append(rowItem->Name()).Append(")");
+				rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection(rowItem));
+			}
+			BAlert *alert = new BAlert("confirm", text, kRemoveLabel,
+				kCancelLabel, NULL, B_WIDTH_AS_USUAL, B_WARNING_ALERT);
+			alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
+			int32 answer = alert->Go();
+			// User presses Cancel button
+			if(answer)
+				break;
+			
+			rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
 			while(rowItem)
 			{
 				RepoRow *oldRow = rowItem;
@@ -289,11 +320,12 @@ DepotsView::MessageReceived(BMessage* message)
 			status_t result1 = message->FindInt16(key_count, &count);
 			RepoRow *rowItem;
 			status_t result2 = message->FindPointer(key_rowptr, (void**)&rowItem);
-			if(result1 == B_OK && result2 == B_OK)
-				_TaskCompleted(rowItem, count, false, repoName);
-			// Refresh the enabled status of each row since it is unsure what
-			// caused the error
-			_RefreshList();
+			if(result1 == B_OK && result2 == B_OK) {
+				_TaskCompleted(rowItem, count, repoName);
+				// Refresh the enabled status of each row since it is unsure what
+				// caused the error
+				_RefreshList();
+			}
 			_UpdateButtons();
 			break;
 		}
@@ -304,12 +336,13 @@ DepotsView::MessageReceived(BMessage* message)
 			status_t result1 = message->FindInt16(key_count, &count);
 			RepoRow *rowItem;
 			status_t result2 = message->FindPointer(key_rowptr, (void**)&rowItem);
-			if(result1 == B_OK && result2 == B_OK)
-				_TaskCompleted(rowItem, count, true, repoName);
-			// If the completed row has siblings then enabling this row may
-			// have disabled one of the other siblings, do full refresh.
-			if(rowItem->HasSiblings() && rowItem->IsEnabled())
-				_RefreshList();
+			if(result1 == B_OK && result2 == B_OK) {
+				_TaskCompleted(rowItem, count, repoName);
+				// If the completed row has siblings then enabling this row may
+				// have disabled one of the other siblings, do full refresh.
+				if(rowItem->HasSiblings() && rowItem->IsEnabled())
+					_RefreshList();
+			}
 			_UpdateButtons();
 			break;
 		}
@@ -374,33 +407,17 @@ DepotsView::_TaskStarted(RepoRow *rowItem, int16 count)
 
 
 void
-DepotsView::_TaskCompleted(RepoRow *rowItem, int16 count, bool noErrors,
-	BString& newName)
+DepotsView::_TaskCompleted(RepoRow *rowItem, int16 count, BString& newName)
 {
 	fRunningTaskCount = count;
-	// If this is the last task show completed status text for 3 seconds
-	if(count==0 && fShowCompletedStatus)
-	{
-		fListStatusView->SetText(kStatusCompletedText);
-		fLastCompletedTimerId = rand();
-		BMessage timerMessage(STATUS_VIEW_COMPLETED_TIMEOUT);
-		timerMessage.AddInt32(key_ID, fLastCompletedTimerId);
-		new BMessageRunner(this, &timerMessage, 3000000, 1);
-		fShowCompletedStatus = false;
-	}
-	else
-		_UpdateStatusView();
+	_ShowCompletedStatusIfDone();
 	
-	// Update row values
+	// Update row state and values
 	rowItem->SetTaskState(STATE_NOT_IN_QUEUE);
-	if(noErrors)
-		rowItem->SetEnabled(!rowItem->IsEnabled());
-	else
-		rowItem->RefreshEnabledField();
-	// Update a new repository name
 	if(kNewRepoDefaultName.Compare(rowItem->Name()) == 0
 		&& newName.Compare("") != 0)
 		rowItem->SetName(newName.String());
+	_UpdateFromRepoConfig(rowItem);
 }
 
 
@@ -408,8 +425,19 @@ void
 DepotsView::_TaskCanceled(RepoRow *rowItem, int16 count)
 {
 	fRunningTaskCount = count;
+	_ShowCompletedStatusIfDone();
+	
+	// Update row state and values
+	rowItem->SetTaskState(STATE_NOT_IN_QUEUE);
+	_UpdateFromRepoConfig(rowItem);
+}
+
+
+void
+DepotsView::_ShowCompletedStatusIfDone()
+{
 	// If this is the last task show completed status text for 3 seconds
-	if(count==0 && fShowCompletedStatus)
+	if(fRunningTaskCount==0 && fShowCompletedStatus)
 	{
 		fListStatusView->SetText(kStatusCompletedText);
 		fLastCompletedTimerId = rand();
@@ -420,8 +448,21 @@ DepotsView::_TaskCanceled(RepoRow *rowItem, int16 count)
 	}
 	else
 		_UpdateStatusView();
-	// Update row values
-	rowItem->SetTaskState(STATE_NOT_IN_QUEUE);
+}
+
+
+void
+DepotsView::_UpdateFromRepoConfig(RepoRow *rowItem)
+{
+	BPackageKit::BPackageRoster pRoster;
+	BPackageKit::BRepositoryConfig repoConfig;
+	BString repoName(rowItem->Name());
+	status_t result = pRoster.GetRepositoryConfig(repoName, &repoConfig);
+	// Repo name was found and the URL matches
+	if(result == B_OK && repoConfig.BaseURL().Compare(rowItem->Url())==0)
+		rowItem->SetEnabled(true);
+	else
+		rowItem->SetEnabled(false);
 }
 
 
@@ -552,6 +593,8 @@ DepotsView::_UpdateListFromRoster()
 		result = pRoster.GetRepositoryConfig(repoName, &repoConfig);
 		if(result == B_OK)
 			_AddRepo(repoName, repoConfig.BaseURL(), true);
+//		else
+//			(new BAlert("error", "Error getting repo config", "OK"))->Go(NULL);
 	}
 	_FindSiblings();
 	_SaveList();

@@ -1,9 +1,10 @@
-1	English	application/x-vnd.BH-Depots	422671837
+1	English	application/x-vnd.BH-Depots	3896953727
 The URL must start with a protocol, for example http:// or https://	AddRepoWindow	Add URL error message	The URL must start with a protocol, for example http:// or https://
 Add	AddRepoWindow	Button label	Add
 Depot URL:	AddRepoWindow	Text box label	Depot URL:
 Cancel	Constants	Button label	Cancel
 OK	Constants	Button label	OK
+Remove	Constants	Button label	Remove
 Unknown	Constants	Unknown depot name	Unknown
 Depots preflet version 1.1.0	DepotsApplication	About box line 1	Depots preflet version 1.1.0
 Copyright © 2016 by Brian Hill	DepotsApplication	About box line 2	Copyright © 2016 by Brian Hill
@@ -21,6 +22,8 @@ URL	DepotsView	Column title	URL
 Only one URL for each depot can be enabled.  Please change your selections.	DepotsView	Error message	Only one URL for each depot can be enabled.  Please change your selections.
 This depot URL already exists.	DepotsView	Error message	This depot URL already exists.
 Select depots to use with Haiku package management:	DepotsView	Label text	Select depots to use with Haiku package management:
+Remove these depots?	DepotsView	Removal alert confirmation message	Remove these depots?
+Remove this depot?	DepotsView	Removal alert confirmation message	Remove this depot?
 Changes completed	DepotsView	Status view text	Changes completed
 Changes pending:	DepotsView	Status view text	Changes pending:
 Some tasks are still running. Stop these tasks and quit?	DepotsWindow	Alert message	Some tasks are still running. Stop these tasks and quit?

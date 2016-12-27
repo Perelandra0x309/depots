@@ -41,8 +41,10 @@ private:
 	void					_AddSelectedRowsToQueue();
 	void					_TaskStarted(RepoRow *rowItem, int16 count);
 	void					_TaskCompleted(RepoRow *rowItem, int16 count,
-								bool noErrors, BString& newName);
+								BString& newName);
 	void					_TaskCanceled(RepoRow *rowItem, int16 count);
+	void					_ShowCompletedStatusIfDone();
+	void					_UpdateFromRepoConfig(RepoRow *rowItem);
 	
 	// GUI functions
 	BString					_GetRootUrl(BString url);

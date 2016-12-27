@@ -171,7 +171,6 @@ TaskLooper::MessageReceived(BMessage *message)
 		case TASK_COMPLETED:
 		case TASK_COMPLETED_WITH_ERRORS:
 		case TASK_CANCELED: {
-		//	(new BAlert("complete", "Task complete.", "OK"))->Go(NULL);
 			Task *task;
 			status_t result = message->FindPointer(key_taskptr, (void**)&task);
 			if(result==B_OK && fTaskQueue.HasItem(task)) {

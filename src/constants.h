@@ -20,6 +20,8 @@ static const int16 kTimerRetrySeconds = 20;
 static const BString kOKLabel = B_TRANSLATE_COMMENT("OK", "Button label");
 static const BString kCancelLabel = B_TRANSLATE_COMMENT("Cancel",
 	"Button label");
+static const BString kRemoveLabel = B_TRANSLATE_COMMENT("Remove",
+	"Button label");
 static const BString kWebsiteUrl = "http://perelandra0x309.github.io/depots";
 static const BString kNewRepoDefaultName = B_TRANSLATE_COMMENT("Unknown",
 	"Unknown depot name");
