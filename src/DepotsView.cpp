@@ -275,7 +275,7 @@ DepotsView::MessageReceived(BMessage* message)
 				_TaskStarted(rowItem, count);
 			break;
 		}
-		case TASK_COMPLETE_WITH_ERRORS: {
+		case TASK_COMPLETED_WITH_ERRORS: {
 			BString errorDetails;
 			status_t result = message->FindString(key_details, &errorDetails);
 			if(result == B_OK) {
@@ -283,9 +283,6 @@ DepotsView::MessageReceived(BMessage* message)
 				(new BAlert("error", errorDetails, kOKLabel, NULL, NULL,
 					B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go(NULL);
 			}
-			// Fall through
-		}
-		case TASK_COMPLETE: {
 			BString repoName = message->GetString(key_name,
 				kNewRepoDefaultName.String());
 			int16 count;
@@ -293,31 +290,44 @@ DepotsView::MessageReceived(BMessage* message)
 			RepoRow *rowItem;
 			status_t result2 = message->FindPointer(key_rowptr, (void**)&rowItem);
 			if(result1 == B_OK && result2 == B_OK)
-				_TaskCompleted(rowItem, count, message->what==TASK_COMPLETE,
-					repoName);
-			// If a repo was enabled, it is possible a repo on the same server
-			// was disabled- need to refresh all
-			_UpdatePkgmanList(true);
+				_TaskCompleted(rowItem, count, false, repoName);
+			// Refresh the enabled status of each row since it is unsure what
+			// caused the error
+			_RefreshList();
 			_UpdateButtons();
 			break;
 		}
-		case TASK_CANCELED: {
-		//	(new BAlert("timeout", "Task canceled.", "OK"))->Go(NULL);
+		case TASK_COMPLETED: {
+			BString repoName = message->GetString(key_name,
+				kNewRepoDefaultName.String());
 			int16 count;
 			status_t result1 = message->FindInt16(key_count, &count);
 			RepoRow *rowItem;
 			status_t result2 = message->FindPointer(key_rowptr, (void**)&rowItem);
 			if(result1 == B_OK && result2 == B_OK)
-			{
+				_TaskCompleted(rowItem, count, true, repoName);
+			// If the completed row has siblings then enabling this row may
+			// have disabled one of the other siblings, do full refresh.
+			if(rowItem->HasSiblings() && rowItem->IsEnabled())
+				_RefreshList();
+			_UpdateButtons();
+			break;
+		}
+		case TASK_CANCELED: {
+			int16 count;
+			status_t result1 = message->FindInt16(key_count, &count);
+			RepoRow *rowItem;
+			status_t result2 = message->FindPointer(key_rowptr, (void**)&rowItem);
+			if(result1 == B_OK && result2 == B_OK)
 				_TaskCanceled(rowItem, count);
-			}
-			// Update the list since it is unsure what the final status is
-			_UpdatePkgmanList(true);
+			// Refresh the enabled status of each row since it is unsure what
+			// caused the cancelation
+			_RefreshList();
 			_UpdateButtons();
 			break;
 		}
 		case UPDATE_LIST: {
-			_UpdatePkgmanList(true);
+			_RefreshList();
 			_UpdateButtons();
 			break;
 		}
@@ -425,9 +435,9 @@ DepotsView::AddManualRepository(BString url)
 	int32 listCount = fListView->CountRows();
 	for(index=0; index < listCount; index++)
 	{
-		// Find duplicate
 		RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
 		const char *urlPtr = repoItem->Url();
+		// Find an already existing URL
 		if(url.ICompare(urlPtr) == 0)
 		{
 			(new BAlert("duplicate",
@@ -436,14 +446,15 @@ DepotsView::AddManualRepository(BString url)
 				kOKLabel))->Go(NULL);
 			return; 
 		}
-		//Find same root url
-		if(foundRoot == false && rootUrl.Compare(urlPtr,
+		// Use the same name from another repo with the same root url
+		if(foundRoot == false && rootUrl.ICompare(urlPtr,
 			rootUrl.Length()) == 0) {
 			foundRoot = true;
 			name = repoItem->Name();
 		}
 	}
 	RepoRow *newRepo = _AddRepo(name, url, false);
+	_FindSiblings();
 	fListView->DeselectAll();
 	fListView->AddToSelection(newRepo);
 	_UpdateButtons();
@@ -498,30 +509,32 @@ DepotsView::_InitList()
 		url = urlList.StringAt(index);
 		_AddRepo(name, url, false);
 	}
-	_UpdatePkgmanList();
+	_UpdateListFromRoster();
 	fListView->SetSortColumn(fListView->ColumnAt(kUrlColumn), false, true);
 	fListView->ResizeAllColumnsToPreferred();
 }
 
 
 void
-DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
+DepotsView::_RefreshList()
 {
 	// Clear enabled status on all rows
-	if(updateStatusOnly)
+	int32 index, listCount = fListView->CountRows();
+	for(index=0; index < listCount; index++)
 	{
-		int32 index;
-		int32 listCount = fListView->CountRows();
-		// Find duplicate
-		for(index=0; index < listCount; index++)
-		{
-			RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
-			if(repoItem->TaskState() == STATE_NOT_IN_QUEUE)
-				repoItem->SetEnabled(false);
-		}
+		RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
+		if(repoItem->TaskState() == STATE_NOT_IN_QUEUE)
+			repoItem->SetEnabled(false);
 	}
-	
-	// Get list of current enabled repositories
+	// Get current list of enabled repositories
+	_UpdateListFromRoster();
+}
+
+
+void
+DepotsView::_UpdateListFromRoster()
+{
+	// Get list of currently enabled repositories
 	BStringList repositoryNames;
 	BPackageKit::BPackageRoster pRoster;
 	status_t result = pRoster.GetRepositoryNames(repositoryNames);
@@ -540,8 +553,10 @@ DepotsView::_UpdatePkgmanList(bool updateStatusOnly)
 		if(result == B_OK)
 			_AddRepo(repoName, repoConfig.BaseURL(), true);
 	}
+	_FindSiblings();
 	_SaveList();
 }
+
 
 void
 DepotsView::_SaveList()
@@ -583,6 +598,34 @@ DepotsView::_AddRepo(BString name, BString url, bool enabled)
 		fListView->AddRow(addedRow);
 	}
 	return addedRow;
+}
+
+
+void
+DepotsView::_FindSiblings()
+{
+	BStringList namesFound, namesWithSiblings;
+	int32 index, listCount = fListView->CountRows();
+	// Find depots names that are duplicated
+	for(index=0; index < listCount; index++) {
+		RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
+		BString name = repoItem->Name();
+		// Ignore newly added repos since we don't know the real name yet
+		if(name.Compare(kNewRepoDefaultName)==0)
+			continue;
+		// First time a name is found- no sibling (yet)
+		if(!namesFound.HasString(name))
+			namesFound.Add(name);
+		// Name was already found once so this name has 2 or more siblings
+		else if(!namesWithSiblings.HasString(name))
+			namesWithSiblings.Add(name);
+	}
+	// Set sibling values for each row
+	for(index=0; index < listCount; index++) {
+		RepoRow *repoItem = dynamic_cast<RepoRow*>((fListView->RowAt(index)));
+		BString name = repoItem->Name();
+		repoItem->SetHasSiblings(namesWithSiblings.HasString(name));
+	}
 }
 
 

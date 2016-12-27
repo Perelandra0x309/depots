@@ -12,6 +12,7 @@
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "Constants"
 
+static const float kAddWindowWidth = 500.0;
 static const float kAddWindowOffset = 10.0;
 static const int16 kTimerAlertOffset = 15;
 static const int16 kTimerTimeoutSeconds = 10;
@@ -64,8 +65,8 @@ enum {
 	DO_TASK,
 	STATUS_VIEW_COMPLETED_TIMEOUT,
 	TASK_STARTED,
-	TASK_COMPLETE,
-	TASK_COMPLETE_WITH_ERRORS,
+	TASK_COMPLETED,
+	TASK_COMPLETED_WITH_ERRORS,
 	TASK_CANCELED,
 	UPDATE_LIST,
 	SHOW_ABOUT,

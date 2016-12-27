@@ -137,8 +137,8 @@ DepotsWindow::MessageReceived(BMessage* message)
 			break;
 		}
 		case TASK_STARTED:
-		case TASK_COMPLETE_WITH_ERRORS:
-		case TASK_COMPLETE:
+		case TASK_COMPLETED_WITH_ERRORS:
+		case TASK_COMPLETED:
 		case TASK_CANCELED: {
 			fView->MessageReceived(message);
 			break;

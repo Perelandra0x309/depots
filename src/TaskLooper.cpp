@@ -168,8 +168,8 @@ TaskLooper::MessageReceived(BMessage *message)
 			}
 			break;
 		}
-		case TASK_COMPLETE:
-		case TASK_COMPLETE_WITH_ERRORS:
+		case TASK_COMPLETED:
+		case TASK_COMPLETED_WITH_ERRORS:
 		case TASK_CANCELED: {
 		//	(new BAlert("complete", "Task complete.", "OK"))->Go(NULL);
 			Task *task;
@@ -179,7 +179,7 @@ TaskLooper::MessageReceived(BMessage *message)
 				BMessage reply(message->what);
 				reply.AddInt16(key_count, fTaskQueue.CountItems()-1);
 				reply.AddPointer(key_rowptr, task->rowItem);
-				if(message->what == TASK_COMPLETE_WITH_ERRORS)
+				if(message->what == TASK_COMPLETED_WITH_ERRORS)
 					reply.AddString(key_details, task->resultErrorDetails);
 				if(task->taskType == ENABLE_DEPOT
 					&& task->name.Compare(task->resultName) != 0)
@@ -298,7 +298,7 @@ TaskLooper::_DoTask(void *data)
 	// Report completion status
 	BMessage reply;
 	if(returnResult == B_OK) {
-		reply.what = TASK_COMPLETE;
+		reply.what = TASK_COMPLETED;
 		// Add the repo name if we need to update the list row value
 		if(task->taskType == ENABLE_DEPOT)
 			task->resultName = repoName;
@@ -306,7 +306,7 @@ TaskLooper::_DoTask(void *data)
 	else if(returnResult == B_CANCELED)
 		reply.what = TASK_CANCELED;
 	else {
-		reply.what = TASK_COMPLETE_WITH_ERRORS;
+		reply.what = TASK_COMPLETED_WITH_ERRORS;
 		task->resultErrorDetails = errorDetails;
 		if(task->taskType == ENABLE_DEPOT)
 			task->resultName = repoName;

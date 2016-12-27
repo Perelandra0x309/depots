@@ -29,12 +29,16 @@ public:
 			bool				IsEnabled() { return fEnabled; }
 			void				SetTaskState(uint32 state);
 			uint32				TaskState() { return fTaskState; }
+			void				SetHasSiblings(bool hasSiblings)
+									{ fHasSiblings = hasSiblings; }
+			bool				HasSiblings() { return fHasSiblings; }
 
 private:
 			BString				fName;
 			BString				fUrl;
 			bool				fEnabled;
 			uint32				fTaskState;
+			bool				fHasSiblings;
 };
 
 #endif

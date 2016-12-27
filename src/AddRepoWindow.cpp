@@ -19,10 +19,7 @@
 
 AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 	:
-	BWindow(BRect(0,0,10,10), "AddWindow",
-		/*B_BORDERED_WINDOW_LOOK, B_MODAL_APP_WINDOW_FEEL,*/
-		B_MODAL_WINDOW, 
-		/*B_NOT_RESIZABLE | B_NOT_MOVABLE | */
+	BWindow(BRect(0,0,kAddWindowWidth,10), "AddWindow", B_MODAL_WINDOW,
 		B_ASYNCHRONOUS_CONTROLS	| B_AUTO_UPDATE_SIZE_LIMITS | B_CLOSE_ON_ESCAPE),
 	fReplyLooper(looper)
 {
@@ -47,11 +44,11 @@ AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 		.Add(fView);
 	fText->MakeFocus();
 	
-	// Move to bottom of window
-	Layout(true);
-	ResizeTo(500, Frame().Height());
-//	MoveTo(size.left, size.bottom - Frame().Height());
+	// Move to the center of the preflet window
 	CenterIn(size);
+	float widthDifference = size.Width() - Frame().Width();
+	if(widthDifference < 0)
+		MoveBy(widthDifference/2.0, 0);
 	Show();
 }
 
@@ -61,15 +58,6 @@ AddRepoWindow::Quit()
 {
 	fReplyLooper->PostMessage(ADD_WINDOW_CLOSED);
 	BWindow::Quit();
-}
-
-
-void
-AddRepoWindow::SetWidth(float width)
-{
-//	Lock();
-//	fView->SetExplicitSize(BSize(width, B_SIZE_UNSET));
-//	Unlock();
 }
 
 
@@ -94,9 +82,8 @@ AddRepoWindow::MessageReceived(BMessage* message)
 							"Add URL error message"),
 						kOKLabel, NULL, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT);
 					alert->SetFeel(B_MODAL_APP_WINDOW_FEEL);
-				//	alert->Go(&fDummyInvoker);
-					BRect windowFrame = be_app->WindowAt(0)->Frame();
 					alert->Go(NULL);
+					// Center the alert to this window and move down some
 					alert->CenterIn(Frame());
 					alert->MoveBy(0, kAddWindowOffset);
 				}

@@ -47,9 +47,11 @@ private:
 	BString					_GetRootUrl(BString url);
 	status_t				_EmptyList();
 	void					_InitList();
-	void					_UpdatePkgmanList(bool updateStatusOnly=false);
+	void					_RefreshList();
+	void					_UpdateListFromRoster();
 	void					_SaveList();
 	RepoRow*				_AddRepo(BString name, BString url, bool enabled);
+	void					_FindSiblings();
 	void					_UpdateButtons();
 	void					_UpdateStatusView();
 };
