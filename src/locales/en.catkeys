@@ -1,4 +1,4 @@
-1	English	application/x-vnd.BH-Depots	3896953727
+1	English	application/x-vnd.BH-Depots	2025810232
 The URL must start with a protocol, for example http:// or https://	AddRepoWindow	Add URL error message	The URL must start with a protocol, for example http:// or https://
 Add	AddRepoWindow	Button label	Add
 Depot URL:	AddRepoWindow	Text box label	Depot URL:
@@ -26,7 +26,8 @@ Remove these depots?	DepotsView	Removal alert confirmation message	Remove these 
 Remove this depot?	DepotsView	Removal alert confirmation message	Remove this depot?
 Changes completed	DepotsView	Status view text	Changes completed
 Changes pending:	DepotsView	Status view text	Changes pending:
-Some tasks are still running. Stop these tasks and quit?	DepotsWindow	Alert message	Some tasks are still running. Stop these tasks and quit?
+Some tasks are still running. Stop these tasks and quit?	DepotsWindow	Application quit alert message	Some tasks are still running. Stop these tasks and quit?
+Stop and quit	DepotsWindow	Button label	Stop and quit
 Depots	System name		Depots
 Aborted	TaskLooper	Aborted task status message	Aborted
 Completed	TaskLooper	Completed task status message	Completed

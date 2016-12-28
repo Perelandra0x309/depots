@@ -101,11 +101,14 @@ bool
 DepotsWindow::QuitRequested()
 {
 	if(fView->IsTaskRunning()) {
-		int32 result = (new BAlert("tasks",
+		BAlert *alert = new BAlert("tasks",
 			B_TRANSLATE_COMMENT("Some tasks are still running. Stop these "
-				"tasks and quit?", "Alert message"),
-			"No", "Yes", NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT))->Go();
-		if(result == 0)
+				"tasks and quit?", "Application quit alert message"),
+			B_TRANSLATE_COMMENT("Stop and quit", "Button label"),
+			kCancelLabel, NULL, B_WIDTH_AS_USUAL, B_STOP_ALERT);
+		alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
+		int32 result = alert->Go();
+		if(result != 0)
 			return false;
 	}
 	fSettings.SetFrame(Frame());
