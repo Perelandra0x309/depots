@@ -220,14 +220,21 @@ DepotsView::MessageReceived(BMessage* message)
 					"Removal alert confirmation message"));
 				text.Append("\n");
 			}
+			float minWidth = 0;
 			while(rowItem)
 			{
-				text.Append("\n").Append(rowItem->Url())
-					.Append(" (").Append(rowItem->Name()).Append(")");
+				BString repoText;
+				repoText.Append("\n").Append(rowItem->Name())
+					.Append(" (").Append(rowItem->Url()).Append(")");
+				minWidth = max_c(minWidth, StringWidth(repoText.String()));
+				text.Append(repoText);
 				rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection(rowItem));
 			}
+			minWidth = min_c(minWidth, Frame().Width());
+				// Ensure alert window isn't much larger than the main window
 			BAlert *alert = new BAlert("confirm", text, kRemoveLabel,
 				kCancelLabel, NULL, B_WIDTH_AS_USUAL, B_WARNING_ALERT);
+			alert->TextView()->SetExplicitMinSize(BSize(minWidth, B_SIZE_UNSET));
 			alert->SetFlags(alert->Flags() | B_CLOSE_ON_ESCAPE);
 			int32 answer = alert->Go();
 			// User presses Cancel button
