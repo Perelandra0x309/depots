@@ -12,8 +12,6 @@
 #include <Window.h>
 
 
-static float sAddWindowWidth = 500.0;
-
 class AddRepoWindow : public BWindow {
 public:
 							AddRepoWindow(BRect size, BLooper *looper);

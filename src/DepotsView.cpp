@@ -50,9 +50,9 @@ DepotsView::DepotsView()
 	:
 	BView("depotsview", B_SUPPORTS_LAYOUT),
 	fTaskLooper(NULL),
+	fShowCompletedStatus(false),
 	fRunningTaskCount(0),
-	fLastCompletedTimerId(0),
-	fShowCompletedStatus(false)
+	fLastCompletedTimerId(0)
 {
 	// Column list view with 3 columns
 	fListView = new BColumnListView("list", B_NAVIGABLE, B_PLAIN_BORDER);
@@ -550,12 +550,14 @@ DepotsView::_InitList()
 	int32 index, repoCount;
 	BStringList nameList, urlList;
 	status_t result = fSettings.GetRepositories(repoCount, nameList, urlList);
-	BString name, url;
-	for(index=0; index < repoCount; index++)
-	{
-		name = nameList.StringAt(index);
-		url = urlList.StringAt(index);
-		_AddRepo(name, url, false);
+	if(result == B_OK) {
+		BString name, url;
+		for(index=0; index < repoCount; index++)
+		{
+			name = nameList.StringAt(index);
+			url = urlList.StringAt(index);
+			_AddRepo(name, url, false);
+		}
 	}
 	_UpdateListFromRoster();
 	fListView->SetSortColumn(fListView->ColumnAt(kUrlColumn), false, true);

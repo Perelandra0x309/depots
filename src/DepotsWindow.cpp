@@ -27,8 +27,8 @@ DepotsWindow::DepotsWindow()
 	:
 	BWindow(BRect(50,50,500,400), B_TRANSLATE_SYSTEM_NAME("Depots"),
 		B_TITLED_WINDOW, B_NOT_ZOOMABLE | B_ASYNCHRONOUS_CONTROLS),
-	fPackageNodeStatus(B_ERROR),
-	fAddWindow(NULL)
+	fAddWindow(NULL),
+	fPackageNodeStatus(B_ERROR)
 {
 	fView = new DepotsView();
 	BLayoutBuilder::Group<>(this, B_VERTICAL).Add(fView);

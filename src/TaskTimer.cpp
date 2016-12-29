@@ -14,13 +14,15 @@
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "TaskTimer"
 
+static int32 sAlertStackCount = 0;
+
 
 TaskTimer::TaskTimer(BLooper *target, Task *owner)
 	:
 	BLooper(),
-	fReplyTarget(target),
 	fTimeoutMicroSeconds(kTimerTimeoutSeconds*1000000),
 	fTimerIsRunning(false),
+	fReplyTarget(target),
 	fMessageRunner(NULL),
 	fTimeoutMessage(TASK_TIMEOUT),
 	fTimeoutAlert(NULL),

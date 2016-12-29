@@ -192,7 +192,7 @@ TaskLooper::MessageReceived(BMessage *message)
 			Task *task;
 			status_t result = message->FindPointer(key_taskptr, (void**)&task);
 			if(result==B_OK && fTaskQueue.HasItem(task)) {
-				status_t killResult = kill_thread(task->threadId);
+				kill_thread(task->threadId);
 				BMessage reply(TASK_CANCELED);
 				reply.AddInt16(key_count, fTaskQueue.CountItems()-1);
 				reply.AddPointer(key_rowptr, task->rowItem);

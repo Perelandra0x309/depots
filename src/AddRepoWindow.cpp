@@ -17,6 +17,8 @@
 #undef B_TRANSLATION_CONTEXT
 #define B_TRANSLATION_CONTEXT "AddRepoWindow"
 
+static float sAddWindowWidth = 500.0;
+
 
 AddRepoWindow::AddRepoWindow(BRect size, BLooper *looper)
 	:
