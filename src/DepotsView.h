@@ -16,6 +16,13 @@
 #include "TaskLooper.h"
 
 
+class DepotsListView : public BColumnListView {
+public:
+							DepotsListView(const char* name);
+	virtual void			KeyDown(const char *bytes, int32 numBytes);
+};
+
+
 class DepotsView : public BView {
 public:
 							DepotsView();
@@ -28,7 +35,7 @@ public:
 
 private:
 	DepotsSettings			fSettings;
-	BColumnListView			*fListView;
+	DepotsListView			*fListView;
 	BView					*fStatusContainerView;
 	BStringView				*fListStatusView;
 	TaskLooper				*fTaskLooper;

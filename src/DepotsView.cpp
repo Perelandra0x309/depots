@@ -46,6 +46,28 @@ static const BString kStatusCompletedText = B_TRANSLATE_COMMENT("Changes complet
 	"Status view text");
 
 
+DepotsListView::DepotsListView(const char* name)
+	:
+	BColumnListView(name, B_NAVIGABLE, B_PLAIN_BORDER)
+{
+}
+
+
+void
+DepotsListView::KeyDown (const char *bytes, int32 numBytes)
+{
+	switch(bytes[0]) {
+		case B_DELETE:
+		{
+			Window()->PostMessage(DELETE_KEY_PRESSED);
+			break;
+		}
+		default:
+			BColumnListView::KeyDown(bytes, numBytes);
+	}
+}
+
+
 DepotsView::DepotsView()
 	:
 	BView("depotsview", B_SUPPORTS_LAYOUT),
@@ -55,7 +77,7 @@ DepotsView::DepotsView()
 	fLastCompletedTimerId(0)
 {
 	// Column list view with 3 columns
-	fListView = new BColumnListView("list", B_NAVIGABLE, B_PLAIN_BORDER);
+	fListView = new DepotsListView("list");
 	fListView->SetSelectionMessage(new BMessage(LIST_SELECTION_CHANGED));
 	float col0width = be_plain_font->StringWidth(kTitleEnabled) + 15;
 	float col1width = be_plain_font->StringWidth(kTitleName) + 15;
@@ -204,7 +226,7 @@ DepotsView::MessageReceived(BMessage* message)
 	{
 		case REMOVE_REPOS :{
 			RepoRow *rowItem = dynamic_cast<RepoRow*>(fListView->CurrentSelection());
-			if(!rowItem)
+			if(!rowItem || !fRemoveButton->IsEnabled())
 				break;
 			
 			BString text;

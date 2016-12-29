@@ -124,7 +124,6 @@ DepotsWindow::MessageReceived(BMessage* message)
 	{
 		case ADD_REPO_WINDOW: {
 			BRect frame = Frame();
-		//	frame.right -= 2*kAddWindowOffset;
 			fAddWindow = new AddRepoWindow(frame, this);
 			break;
 		}
@@ -137,6 +136,11 @@ DepotsWindow::MessageReceived(BMessage* message)
 		}
 		case ADD_WINDOW_CLOSED: {
 			fAddWindow = NULL;
+			break;
+		}
+		case DELETE_KEY_PRESSED: {
+			BMessage message(REMOVE_REPOS);
+			fView->MessageReceived(&message);
 			break;
 		}
 		case TASK_STARTED:
