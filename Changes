@@ -1,9 +1,10 @@
-Version 1.1.0 (December XX 2016 for Haiku Nightly Image)
+Version 1.1.0 (December 30 2016 for Haiku Nightly Image)
 Mutilthreaded task queue for when multiple depots are changed
 Created a status view in the corner of the depot list to replace the former task status progress window
 Replaced system calls to pkgman with classes from the PackageKit
 Created timers for each task to detect a possibly stuck task
 User presented option to kill a stuck task
+Add window checks the clipboard for a URL and pastes it in the text area
 Bug fixes:
 Web link cursor sometimes remained when About window closed
 
