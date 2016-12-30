@@ -118,7 +118,7 @@ AddRepoWindow::_GetClipboardData()
 {
 	if (be_clipboard->Lock()) {
 		const char *string;
-		int32 stringLen;
+		ssize_t stringLen;
 	    BMessage *clip = be_clipboard->Data();
 	    clip->FindData("text/plain", B_MIME_TYPE, (const void **)&string,
 	        &stringLen);
